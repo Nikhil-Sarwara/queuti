@@ -83,6 +83,9 @@ export function KanbanBoard() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [busyId, setBusyId] = useState("");
+  const [csvText, setCsvText] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -158,6 +161,38 @@ export function KanbanBoard() {
     }
   }
 
+  async function importCsv() {
+    if (!csvText.trim()) return;
+    setImporting(true);
+    setImportResult("");
+    setError("");
+    try {
+      const res = await fetch("/api/applications/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ csv: csvText }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `Import failed (${res.status})`);
+      setImportResult(
+        `✅ Imported ${data.imported}, skipped ${data.skipped} duplicate${data.invalid ? ", " + data.invalid + " invalid" : ""}.`
+      );
+      load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to import");
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setCsvText(String(reader.result || ""));
+    reader.readAsText(file);
+  }
+
   const byStatus = (s: AppStatus) => apps.filter((a) => a.status === s);
 
   return (
@@ -202,6 +237,41 @@ export function KanbanBoard() {
           <p className="text-sm font-semibold text-blood">⚠️ {error}</p>
         </Card>
       )}
+
+      {/* ---- CSV import (desk drawer) ---- */}
+      <Card material="wood" framed className="shadow-bevel">
+        <details>
+          <summary className="cursor-pointer select-none font-display text-base font-bold text-ink text-engraved">
+            📥 Import from CSV (jobhunt-applications.csv)
+          </summary>
+          <div className="mt-3 flex flex-col gap-3">
+            <label className="flex cursor-pointer flex-col gap-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wider text-ink-soft">
+                Choose file
+              </span>
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                onChange={onFile}
+                className="block w-full text-sm text-ink-soft file:mr-3 file:rounded-md file:border-2 file:border-b-4 file:border-brass-dark/60 file:bg-gradient-to-b file:from-brass-light file:to-brass file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-ink file:shadow-bevel-sm file:transition hover:file:brightness-105"
+              />
+            </label>
+            <textarea
+              value={csvText}
+              onChange={(e) => setCsvText(e.target.value)}
+              rows={6}
+              placeholder={"…or paste CSV here:\ndate,title,company,apply_url,hiring_email\n2026-08-16,Software Engineer,Acme,https://acme.com/job,hr@acme.com"}
+              className="w-full rounded-md border border-ink/30 bg-ink/10 px-3 py-2 font-mono text-xs text-ink shadow-engraved outline-none transition placeholder:text-ink-faint focus:border-brass focus:bg-paper-light/60 focus:ring-2 focus:ring-brass/30"
+            />
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="button" variant="brass" onClick={importCsv} disabled={importing || !csvText.trim()}>
+                {importing ? "Importing…" : "🚚 Import applications"}
+              </Button>
+              {importResult && <p className="text-sm font-semibold text-moss-dark">{importResult}</p>}
+            </div>
+          </div>
+        </details>
+      </Card>
 
       {loading ? (
         <Card material="paper" className="shadow-bevel-sm">
