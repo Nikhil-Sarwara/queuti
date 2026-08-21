@@ -4,6 +4,7 @@ import Link from "next/link";
 import { verifySession } from "@/lib/auth";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
+import { MlPanel } from "@/components/MlPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,8 @@ export default async function DashboardPage() {
       <KanbanBoard />
 
       <AnalyticsDashboard />
+
+      <MlPanel />
 
       <p className="mt-8 text-center text-xs opacity-50">
         <Link href="/" className="hover:underline">← Back to home</Link> ·{" "}
