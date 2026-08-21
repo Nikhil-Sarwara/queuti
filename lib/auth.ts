@@ -46,6 +46,23 @@ export async function verifySession(
   }
 }
 
+/**
+ * Extract + verify session from a Request — accepts the queuti_token cookie
+ * (same-origin fetches) or a Bearer token (API clients).
+ */
+export async function requireSession(
+  req: Request
+): Promise<{ session: SessionPayload } | { error: Response }> {
+  const cookie = req.headers.get("cookie") || "";
+  const match = cookie.match(/(?:^|;\s*)queuti_token=([^;]+)/);
+  const token = match ? decodeURIComponent(match[1]) : null;
+  if (token) {
+    const session = await verifySession(token);
+    if (session) return { session };
+  }
+  return requireAuth(req);
+}
+
 /** Extract + verify bearer token from a Request. */
 export async function requireAuth(
   req: Request
