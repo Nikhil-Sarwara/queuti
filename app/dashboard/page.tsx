@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { verifySession } from "@/lib/auth";
 import { KanbanBoard } from "@/components/KanbanBoard";
+import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,8 @@ export default async function DashboardPage() {
       </header>
 
       <KanbanBoard />
+
+      <AnalyticsDashboard />
 
       <p className="mt-8 text-center text-xs opacity-50">
         <Link href="/" className="hover:underline">← Back to home</Link> ·{" "}

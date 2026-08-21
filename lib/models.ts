@@ -28,6 +28,8 @@ export interface Application {
   source?: string; // e.g. "linkedin", "seek", "direct"
   status: ApplicationStatus;
   dateApplied: Date;
+  /** Set on the first status change away from "applied" (unless ghosted) — enables avg-response-days analytics. */
+  respondedAt?: Date;
   salary?: string;
   notes?: string;
   createdAt: Date;

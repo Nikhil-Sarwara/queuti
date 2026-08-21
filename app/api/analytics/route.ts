@@ -1,0 +1,115 @@
+import { NextResponse } from "next/server";
+import { ObjectId } from "mongodb";
+import { applications } from "@/lib/models";
+import { requireSession } from "@/lib/auth";
+import type { ApplicationStatus } from "@/lib/models";
+
+export const dynamic = "force-dynamic";
+
+const STATUSES: ApplicationStatus[] = [
+  "applied",
+  "screening",
+  "interview",
+  "offer",
+  "rejected",
+  "ghosted",
+];
+
+/**
+ * GET /api/analytics — per-user aggregations over applications:
+ * - funnel: counts per kanban stage
+ * - avgResponseDays: mean days from dateApplied → respondedAt
+ *   (respondedAt set on first status move off "applied", excluding ghosted)
+ * - sources: applications per source (row counts)
+ * - totals: applied, responded, offerRate, ghostRate
+ */
+export async function GET(req: Request) {
+  const auth = await requireSession(req);
+  if ("error" in auth) return auth.error;
+  const { session } = auth;
+  const userId = new ObjectId(session.userId);
+
+  const col = await applications();
+  const [funnel, avgAgg, sources, totals] = await Promise.all([
+    col
+      .aggregate<{ _id: ApplicationStatus; count: number }>([
+        { $match: { userId } },
+        { $group: { _id: "$status", count: { $sum: 1 } } },
+      ])
+      .toArray(),
+    col
+      .aggregate<{ _id: null; avgDays: number | null; n: number }>([
+        {
+          $match: {
+            userId,
+            respondedAt: { $exists: true, $ne: null },
+            dateApplied: { $exists: true, $ne: null },
+          },
+        },
+        {
+          $project: {
+            days: {
+              $divide: [
+                { $subtract: ["$respondedAt", "$dateApplied"] },
+                1000 * 60 * 60 * 24,
+              ],
+            },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            avgDays: { $avg: "$days" },
+            n: { $sum: 1 },
+          },
+        },
+      ])
+      .toArray(),
+    col
+      .aggregate<{ _id: string; count: number }>([
+        { $match: { userId, source: { $ne: "" } } },
+        { $group: { _id: "$source", count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+      ])
+      .toArray(),
+    col
+      .aggregate<{ _id: null; total: number; responded: number; offers: number; ghosted: number }>([
+        {
+          $match: { userId },
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            responded: {
+              $sum: { $cond: [{ $in: ["$status", ["screening", "interview", "offer", "rejected"]] }, 1, 0] },
+            },
+            offers: { $sum: { $cond: [{ $eq: ["$status", "offer"] }, 1, 0] } },
+            ghosted: { $sum: { $cond: [{ $eq: ["$status", "ghosted"] }, 1, 0] } },
+          },
+        },
+      ])
+      .toArray(),
+  ]);
+
+  const funnelMap = Object.fromEntries(funnel.map((f) => [f._id, f.count]));
+  const funnelOut = STATUSES.map((s) => ({
+    status: s,
+    count: funnelMap[s] || 0,
+  }));
+  const avg = avgAgg[0];
+  const tot = totals[0];
+
+  return NextResponse.json({
+    funnel: funnelOut,
+    avgResponseDays: avg && avg.avgDays !== null ? Math.round(avg.avgDays * 10) / 10 : null,
+    respondedCount: avg ? avg.n : 0,
+    sources: sources.map((s) => ({ source: s._id || "(blank)", count: s.count })),
+    totals: {
+      total: tot ? tot.total : 0,
+      responded: tot ? tot.responded : 0,
+      offers: tot ? tot.offers : 0,
+      ghosted: tot ? tot.ghosted : 0,
+    },
+  });
+}

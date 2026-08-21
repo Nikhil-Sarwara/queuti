@@ -69,7 +69,17 @@ export async function PATCH(
         { status: 400 }
       );
     }
-    $set.status = body.status as ApplicationStatus;
+    const next = body.status as ApplicationStatus;
+    $set.status = next;
+    // First response = first move off "applied" that isn't a ghosting.
+    if (
+      existing.status === "applied" &&
+      next !== "applied" &&
+      next !== "ghosted" &&
+      !existing.respondedAt
+    ) {
+      $set.respondedAt = new Date();
+    }
   }
   if (body.dateApplied !== undefined) {
     const d = new Date(body.dateApplied as string);
