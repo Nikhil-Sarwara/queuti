@@ -1,30 +1,41 @@
 import { NextResponse } from "next/server";
 import { pingDb } from "@/lib/mongodb";
 import { ensureIndexes } from "@/lib/models";
+import { redisEnabled, redisPing } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/health — DB + index healthcheck.
+ * GET /api/health — DB + Redis + index healthcheck.
  * Used by the deploy smoke test and any uptime monitor.
  */
 export async function GET() {
-  const db = await pingDb();
-  if (!db.ok) {
-    return NextResponse.json(
-      { status: "degraded", db: db },
-      { status: 503 }
-    );
-  }
+  const [db, redis, indexes] = await Promise.allSettled([
+    pingDb(),
+    redisPing(),
+    ensureIndexes(),
+  ]);
 
-  // Fire-and-forget index ensure (idempotent; only after a successful ping).
-  ensureIndexes().catch((err) =>
-    console.error("[queuti] ensureIndexes failed:", err)
+  const dbResult = db.status === "fulfilled" ? db.value : { ok: false, error: String(db.reason) };
+  const redisResult =
+    redis.status === "fulfilled" ? redis.value : { ok: false, note: String(redis.reason) };
+  const indexResult =
+    indexes.status === "fulfilled" ? { ok: true } : { ok: false, error: String(indexes.reason) };
+
+  const ok = dbResult.ok && indexResult.ok;
+  return NextResponse.json(
+    {
+      status: ok ? "ok" : "degraded",
+      db: dbResult,
+      redis: {
+        ok: redisResult.ok,
+        enabled: redisEnabled(),
+        latencyMs: redisResult.latencyMs,
+        note: redisResult.note,
+      },
+      indexes: indexResult,
+      collections: ["users", "applications", "events", "contacts", "companies"],
+    },
+    { status: ok ? 200 : 503 }
   );
-
-  return NextResponse.json({
-    status: "ok",
-    db: db,
-    collections: ["users", "applications", "events", "contacts", "companies"],
-  });
 }

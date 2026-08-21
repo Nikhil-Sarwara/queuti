@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { applications } from "@/lib/models";
 import { requireSession } from "@/lib/auth";
+import { withCache } from "@/lib/redis";
 import type { ApplicationStatus } from "@/lib/models";
 
 export const dynamic = "force-dynamic";
@@ -15,20 +16,16 @@ const STATUSES: ApplicationStatus[] = [
   "ghosted",
 ];
 
-/**
- * GET /api/analytics — per-user aggregations over applications:
- * - funnel: counts per kanban stage
- * - avgResponseDays: mean days from dateApplied → respondedAt
- *   (respondedAt set on first status move off "applied", excluding ghosted)
- * - sources: applications per source (row counts)
- * - totals: applied, responded, offerRate, ghostRate
- */
-export async function GET(req: Request) {
-  const auth = await requireSession(req);
-  if ("error" in auth) return auth.error;
-  const { session } = auth;
-  const userId = new ObjectId(session.userId);
+interface AnalyticsPayload {
+  funnel: { status: ApplicationStatus; count: number }[];
+  avgResponseDays: number | null;
+  respondedCount: number;
+  sources: { source: string; count: number }[];
+  totals: { total: number; responded: number; offers: number; ghosted: number };
+}
 
+/** Compute per-user analytics from Mongo. */
+async function computeAnalytics(userId: ObjectId): Promise<AnalyticsPayload> {
   const col = await applications();
   const [funnel, avgAgg, sources, totals] = await Promise.all([
     col
@@ -93,14 +90,14 @@ export async function GET(req: Request) {
   ]);
 
   const funnelMap = Object.fromEntries(funnel.map((f) => [f._id, f.count]));
-  const funnelOut = STATUSES.map((s) => ({
+  const funnelOut: AnalyticsPayload["funnel"] = STATUSES.map((s) => ({
     status: s,
     count: funnelMap[s] || 0,
   }));
   const avg = avgAgg[0];
   const tot = totals[0];
 
-  return NextResponse.json({
+  return {
     funnel: funnelOut,
     avgResponseDays: avg && avg.avgDays !== null ? Math.round(avg.avgDays * 10) / 10 : null,
     respondedCount: avg ? avg.n : 0,
@@ -111,5 +108,30 @@ export async function GET(req: Request) {
       offers: tot ? tot.offers : 0,
       ghosted: tot ? tot.ghosted : 0,
     },
-  });
+  };
+}
+
+/**
+ * GET /api/analytics — per-user aggregations over applications:
+ * - funnel: counts per kanban stage
+ * - avgResponseDays: mean days from dateApplied → respondedAt
+ *   (respondedAt set on first status move off "applied", excluding ghosted)
+ * - sources: applications per source (row counts)
+ * - totals: applied, responded, offerRate, ghostRate
+ *
+ * Upstash-backed cache-aside (30s TTL, per-user); falls back to Mongo
+ * directly when Redis env vars are absent.
+ */
+export async function GET(req: Request) {
+  const auth = await requireSession(req);
+  if ("error" in auth) return auth.error;
+  const { session } = auth;
+  const userId = new ObjectId(session.userId);
+
+  const payload = await withCache<AnalyticsPayload>(
+    `analytics:${session.userId}`,
+    30,
+    () => computeAnalytics(userId)
+  );
+  return NextResponse.json(payload);
 }

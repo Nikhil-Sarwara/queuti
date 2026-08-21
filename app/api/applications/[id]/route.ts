@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { applications } from "@/lib/models";
 import { requireSession } from "@/lib/auth";
+import { cacheDel } from "@/lib/redis";
 import type { Application, ApplicationStatus } from "@/lib/models";
 
 export const dynamic = "force-dynamic";
@@ -95,6 +96,7 @@ export async function PATCH(
     { $set },
     { returnDocument: "after" }
   );
+  await cacheDel(`analytics:${session.userId}`).catch(() => {});
 
   return NextResponse.json({ application: res ? serialize(res) : null });
 }
@@ -120,6 +122,7 @@ export async function DELETE(
   if (res.deletedCount === 0) {
     return NextResponse.json({ error: "Application not found" }, { status: 404 });
   }
+  await cacheDel(`analytics:${session.userId}`).catch(() => {});
   return NextResponse.json({ ok: true });
 }
 

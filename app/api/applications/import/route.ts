@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { applications } from "@/lib/models";
 import { requireSession } from "@/lib/auth";
+import { cacheDel } from "@/lib/redis";
 import { parseCsvObjects } from "@/lib/csv";
 import type { Application } from "@/lib/models";
 
@@ -103,6 +104,9 @@ export async function POST(req: Request) {
       errors.push(`row ${i + 2}: ${e instanceof Error ? e.message : "write failed"}`);
     }
   }
+
+  // Import shifts counts — drop the analytics cache for this user.
+  await cacheDel(`analytics:${session.userId}`).catch(() => {});
 
   return NextResponse.json({
     imported,

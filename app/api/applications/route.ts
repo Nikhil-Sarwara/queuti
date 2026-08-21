@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { applications, ensureIndexes } from "@/lib/models";
 import { requireSession } from "@/lib/auth";
+import { cacheDel } from "@/lib/redis";
 import type { Application, ApplicationStatus } from "@/lib/models";
 
 export const dynamic = "force-dynamic";
@@ -115,6 +116,7 @@ export async function POST(req: Request) {
   };
   const res = await col.insertOne(doc);
   await ensureIndexes().catch(() => {});
+  await cacheDel(`analytics:${session.userId}`).catch(() => {});
 
   return NextResponse.json(
     { application: serialize({ ...doc, _id: res.insertedId }) },
