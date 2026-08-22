@@ -41,13 +41,15 @@ const STATUSES: AppStatus[] = [
   "ghosted",
 ];
 
+import { STATUS_TONE_CLS } from "@/lib/tones";
+
 const COLUMN_META: Record<AppStatus, { label: string; cls: string }> = {
-  applied: { label: "Applied", cls: "from-brass-light to-brass text-ink" },
-  screening: { label: "Screening", cls: "from-leather-300 to-leather-500 text-paper-light" },
-  interview: { label: "Interview", cls: "from-moss-light to-moss text-paper-light" },
-  offer: { label: "Offer", cls: "from-moss to-moss-light text-ink" },
-  rejected: { label: "Rejected", cls: "from-blood-light to-blood text-paper-light" },
-  ghosted: { label: "Ghosted", cls: "from-ink/50 to-ink/70 text-paper-light" },
+  applied: { label: "Applied", cls: STATUS_TONE_CLS.applied },
+  screening: { label: "Screening", cls: STATUS_TONE_CLS.screening },
+  interview: { label: "Interview", cls: STATUS_TONE_CLS.interview },
+  offer: { label: "Offer", cls: STATUS_TONE_CLS.offer },
+  rejected: { label: "Rejected", cls: STATUS_TONE_CLS.rejected },
+  ghosted: { label: "Ghosted", cls: STATUS_TONE_CLS.ghosted },
 };
 
 const EMPTY_FORM = {
@@ -375,7 +377,7 @@ export function KanbanBoard() {
       </Card>
 
       {error && (
-        <Card material="paper" className="border-blood/60 shadow-bevel-sm">
+        <Card material="paper" className="border-blood/60 shadow-bevel-sm" role="alert">
           <p className="text-sm font-semibold text-blood">⚠️ {error}</p>
         </Card>
       )}
@@ -429,6 +431,7 @@ export function KanbanBoard() {
               value={csvText}
               onChange={(e) => setCsvText(e.target.value)}
               rows={5}
+              aria-label="Paste CSV data"
               placeholder={"…or paste CSV here:\ndate,title,company,apply_url,hiring_email\n2026-08-16,Software Engineer,Acme,https://acme.com/job,hr@acme.com"}
               className="w-full rounded-md border border-ink/30 bg-ink/10 px-3 py-2 font-mono text-xs text-ink shadow-engraved outline-none transition placeholder:text-ink-faint focus:border-brass focus:bg-paper-light/60 focus:ring-2 focus:ring-brass/30"
             />
@@ -439,7 +442,7 @@ export function KanbanBoard() {
               {importResult && <p className="text-sm font-semibold text-moss-dark">{importResult}</p>}
             </div>
             {importErrors.length > 0 && (
-              <ul className="max-h-40 overflow-y-auto rounded-md border border-blood/40 bg-blood/10 p-2.5 text-xs text-blood-dark">
+              <ul className="max-h-40 overflow-y-auto rounded-md border border-blood/40 bg-blood/10 p-2.5 text-xs text-blood-dark" role="alert">
                 {importErrors.map((msg, i) => (
                   <li key={i} className="font-mono">⚠️ {msg}</li>
                 ))}
@@ -486,6 +489,7 @@ export function KanbanBoard() {
               <button
                 type="button"
                 onClick={() => setView("board")}
+                aria-pressed={view === "board"}
                 className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
                   view === "board"
                     ? "border border-b-2 border-brass-dark bg-gradient-to-b from-brass-light to-brass text-ink shadow-bevel-sm"
@@ -497,6 +501,7 @@ export function KanbanBoard() {
               <button
                 type="button"
                 onClick={() => setView("table")}
+                aria-pressed={view === "table"}
                 className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
                   view === "table"
                     ? "border border-b-2 border-brass-dark bg-gradient-to-b from-brass-light to-brass text-ink shadow-bevel-sm"
@@ -508,6 +513,7 @@ export function KanbanBoard() {
               <button
                 type="button"
                 onClick={() => setView("archived")}
+                aria-pressed={view === "archived"}
                 className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
                   view === "archived"
                     ? "border border-b-2 border-brass-dark bg-gradient-to-b from-brass-light to-brass text-ink shadow-bevel-sm"
@@ -599,6 +605,7 @@ export function KanbanBoard() {
                       key={s}
                       type="button"
                       onClick={() => toggleStatus(s)}
+                      aria-pressed={!hiddenStatuses.has(s)}
                       title={hiddenStatuses.has(s) ? `Show ${COLUMN_META[s].label}` : `Hide ${COLUMN_META[s].label}`}
                       className={`rounded-full border px-2.5 py-1 text-[11px] font-bold shadow-bevel-sm transition ${
                         hiddenStatuses.has(s)
@@ -669,7 +676,7 @@ export function KanbanBoard() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {STATUSES.filter((s) => !hiddenStatuses.has(s)).map((s) => (
             <div key={s} className="flex flex-col gap-2">
-              <div className={`rounded-md border border-ink/20 bg-gradient-to-b px-3 py-1.5 text-center text-xs font-bold uppercase tracking-widest shadow-bevel-sm ${COLUMN_META[s].cls}`}>
+              <div className={`rounded-md border bg-gradient-to-b px-3 py-1.5 text-center text-xs font-bold uppercase tracking-widest shadow-bevel-sm ${COLUMN_META[s].cls}`}>
                 {COLUMN_META[s].label}
                 <span className="ml-1.5 rounded-full bg-ink/15 px-1.5 text-[10px]">
                   {byStatus(s).length}
@@ -733,6 +740,7 @@ export function KanbanBoard() {
                           disabled={STATUSES.indexOf(app.status) === 0 || busyId === app._id}
                           onClick={() => move(app, -1)}
                           title="Move left"
+                          aria-label={`Move ${app.title} to previous stage`}
                         >
                           ←
                         </Button>
@@ -742,6 +750,7 @@ export function KanbanBoard() {
                           disabled={STATUSES.indexOf(app.status) === STATUSES.length - 1 || busyId === app._id}
                           onClick={() => move(app, 1)}
                           title="Move right"
+                          aria-label={`Move ${app.title} to next stage`}
                         >
                           →
                         </Button>
@@ -752,6 +761,7 @@ export function KanbanBoard() {
                         disabled={busyId === app._id}
                         onClick={() => archive(app)}
                         title="Archive (soft delete — restore later)"
+                        aria-label={`Archive ${app.title}`}
                       >
                         🗃️
                       </Button>

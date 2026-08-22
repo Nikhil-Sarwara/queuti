@@ -7,7 +7,7 @@ import type { Config } from "tailwindcss";
  * working, while the whole palette re-themes via `data-theme` on <html>.
  */
 const config: Config = {
-  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
+  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {

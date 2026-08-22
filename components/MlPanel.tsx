@@ -158,6 +158,7 @@ export function MlPanel() {
               value={scoreText}
               onChange={(e) => setScoreText(e.target.value)}
               placeholder="Paste the job description here…"
+              aria-label="Job description for scoring"
               rows={5}
               className="w-full flex-1 resize-none rounded-md border border-ink/30 bg-ink/10 px-3 py-2 text-sm text-ink shadow-engraved outline-none transition placeholder:text-ink-faint focus:border-brass focus:bg-paper-light/60 focus:ring-2 focus:ring-brass/30"
             />
@@ -165,6 +166,7 @@ export function MlPanel() {
               value={scoreRole}
               onChange={(e) => setScoreRole(e.target.value)}
               placeholder="Target role (e.g. Full-stack Developer)"
+              aria-label="Target role"
               className="w-full rounded-md border border-ink/30 bg-ink/10 px-3 py-2 text-sm text-ink shadow-engraved outline-none transition placeholder:text-ink-faint focus:border-brass focus:ring-2 focus:ring-brass/30"
             />
             {scoreResult && (

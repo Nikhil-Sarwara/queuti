@@ -81,7 +81,7 @@ export function UpcomingInterviews() {
             ))}
           </div>
         ) : error ? (
-          <Card className="text-sm text-blood-dark">⚠️ {error}</Card>
+          <Card className="text-sm text-blood-dark" role="alert">⚠️ {error}</Card>
         ) : events.length === 0 ? (
           <Card material="paper" framed className="shadow-bevel-sm">
             <p className="text-sm italic opacity-60">

@@ -19,13 +19,15 @@ interface AnalyticsData {
   totals: { total: number; responded: number; offers: number; ghosted: number };
 }
 
+import { STATUS_TONE_CLS } from "@/lib/tones";
+
 const STAGE_META: Record<AnalyticsStatus, { label: string; bar: string }> = {
-  applied: { label: "Applied", bar: "from-brass-light to-brass" },
-  screening: { label: "Screening", bar: "from-leather-300 to-leather-500" },
-  interview: { label: "Interview", bar: "from-moss-light to-moss" },
-  offer: { label: "Offer", bar: "from-moss to-moss-light" },
-  rejected: { label: "Rejected", bar: "from-blood-light to-blood" },
-  ghosted: { label: "Ghosted", bar: "from-ink/50 to-ink/70" },
+  applied: { label: "Applied", bar: STATUS_TONE_CLS.applied },
+  screening: { label: "Screening", bar: STATUS_TONE_CLS.screening },
+  interview: { label: "Interview", bar: STATUS_TONE_CLS.interview },
+  offer: { label: "Offer", bar: STATUS_TONE_CLS.offer },
+  rejected: { label: "Rejected", bar: STATUS_TONE_CLS.rejected },
+  ghosted: { label: "Ghosted", bar: STATUS_TONE_CLS.ghosted },
 };
 
 const MAX_BAR_WIDTH = 100;

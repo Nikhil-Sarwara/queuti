@@ -202,7 +202,7 @@ export function CompaniesPanel() {
       </h2>
 
       {error && (
-        <Card material="paper" className="mt-3 border-blood/60 shadow-bevel-sm">
+        <Card material="paper" className="mt-3 border-blood/60 shadow-bevel-sm" role="alert">
           <p className="text-sm font-semibold text-blood">⚠️ {error}</p>
         </Card>
       )}
@@ -267,10 +267,10 @@ export function CompaniesPanel() {
                       {c.notes && <p className="mt-0.5 line-clamp-2 text-[11px] italic opacity-60">{c.notes}</p>}
                     </div>
                     <div className="flex shrink-0 gap-1">
-                      <Button size="sm" variant="paper" title="Edit" onClick={() => { setCompanyForm({ name: c.name, website: c.website, industry: c.industry, location: c.location, notes: c.notes }); setEditingCompany(c._id); }}>
+                      <Button size="sm" variant="paper" title="Edit" aria-label={`Edit company ${c.name}`} onClick={() => { setCompanyForm({ name: c.name, website: c.website, industry: c.industry, location: c.location, notes: c.notes }); setEditingCompany(c._id); }}>
                         ✏️
                       </Button>
-                      <Button size="sm" variant="danger" title="Delete" onClick={() => deleteCompany(c)}>
+                      <Button size="sm" variant="danger" title="Delete" aria-label={`Delete company ${c.name}`} onClick={() => deleteCompany(c)}>
                         ✕
                       </Button>
                     </div>
@@ -361,10 +361,10 @@ export function CompaniesPanel() {
                     {c.notes && <p className="mt-0.5 line-clamp-2 text-[11px] italic opacity-60">{c.notes}</p>}
                   </div>
                   <div className="flex shrink-0 gap-1">
-                    <Button size="sm" variant="paper" title="Edit" onClick={() => { setContactForm({ name: c.name, email: c.email, phone: c.phone, companyId: c.companyId, notes: c.notes }); setEditingContact(c._id); }}>
+                    <Button size="sm" variant="paper" title="Edit" aria-label={`Edit contact ${c.name}`} onClick={() => { setContactForm({ name: c.name, email: c.email, phone: c.phone, companyId: c.companyId, notes: c.notes }); setEditingContact(c._id); }}>
                       ✏️
                     </Button>
-                    <Button size="sm" variant="danger" title="Delete" onClick={() => deleteContact(c)}>
+                    <Button size="sm" variant="danger" title="Delete" aria-label={`Delete contact ${c.name}`} onClick={() => deleteContact(c)}>
                       ✕
                     </Button>
                   </div>

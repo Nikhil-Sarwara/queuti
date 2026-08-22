@@ -103,7 +103,7 @@ export function MarketIntel() {
   }, []);
   if (error) {
     return (
-      <Card className="text-sm text-blood-dark">⚠️ Could not load market intelligence: {error}</Card>
+      <Card className="text-sm text-blood-dark" role="alert">⚠️ Could not load market intelligence: {error}</Card>
     );
   }
   if (!data) {

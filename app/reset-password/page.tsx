@@ -71,7 +71,7 @@ function ResetForm() {
             required
           />
           {error && (
-            <p className="rounded border-2 border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+            <p role="alert" className="rounded border-2 border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
               {error}
             </p>
           )}

@@ -103,7 +103,7 @@ export function OverviewStats() {
 
   if (error) {
     return (
-      <Card className="text-sm text-blood-dark">
+      <Card className="text-sm text-blood-dark" role="alert">
         ⚠️ Could not load overview: {error}
       </Card>
     );

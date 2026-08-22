@@ -135,6 +135,9 @@ export function SearchPalette() {
   return (
     <div
       className="fixed inset-0 z-[60] flex items-start justify-center bg-ink/40 px-4 pt-[12vh] backdrop-blur-[2px]"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Global search"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) setOpen(false);
       }}
@@ -162,6 +165,8 @@ export function SearchPalette() {
             className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-faint/60"
             role="combobox"
             aria-expanded="true"
+            aria-controls="search-palette-results"
+            aria-activedescendant={total > 0 ? `search-result-${active}` : undefined}
             aria-label="Global search"
           />
           <kbd className="rounded border border-ink/25 bg-ink/10 px-1.5 py-0.5 text-[10px] font-bold text-ink-soft shadow-engraved">
@@ -169,7 +174,7 @@ export function SearchPalette() {
           </kbd>
         </div>
 
-        <div className="max-h-[46vh] overflow-y-auto p-1.5">
+        <div className="max-h-[46vh] overflow-y-auto p-1.5" id="search-palette-results" role="listbox" aria-label="Search results" aria-live="polite">
           {loading && (
             <p className="px-3 py-4 text-center text-xs italic opacity-60">
               Searching…
@@ -204,6 +209,9 @@ export function SearchPalette() {
                           <li key={item._id}>
                             <button
                               type="button"
+                              id={`search-result-${gi}`}
+                              role="option"
+                              aria-selected={isActive}
                               onMouseEnter={() => setActive(gi)}
                               onClick={() => go(gi)}
                               className={`flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-sm transition ${

@@ -369,7 +369,7 @@ export function ApplicationDetail({ id }: { id: string; sessionEmail: string }) 
   return (
     <div className="flex flex-col gap-4">
       {error && (
-        <Card material="paper" className="border-blood/60 shadow-bevel-sm">
+        <Card material="paper" className="border-blood/60 shadow-bevel-sm" role="alert">
           <p className="text-sm font-semibold text-blood">⚠️ {error}</p>
         </Card>
       )}
@@ -406,12 +406,12 @@ export function ApplicationDetail({ id }: { id: string; sessionEmail: string }) 
             )}
           </div>
           <div className="flex items-center gap-1.5">
-            <Button size="sm" variant="paper" disabled={statusIdx === 0 || busyStatus} onClick={() => move(-1)} title="Move earlier stage">←</Button>
+            <Button size="sm" variant="paper" disabled={statusIdx === 0 || busyStatus} onClick={() => move(-1)} title="Move earlier stage" aria-label="Move application to previous stage">←</Button>
             <span className="rounded-md border border-paper-light/20 bg-paper-light/10 px-3 py-1.5 text-xs font-bold text-paper-light shadow-engraved">
               {statusIdx + 1}/{STATUSES.length}
             </span>
-            <Button size="sm" variant="paper" disabled={statusIdx === STATUSES.length - 1 || busyStatus} onClick={() => move(1)} title="Move later stage">→</Button>
-            <Button size="sm" variant="danger" disabled={deleting} onClick={removeApp} title="Archive application (soft delete — restore from archived view)">🗃️</Button>
+            <Button size="sm" variant="paper" disabled={statusIdx === STATUSES.length - 1 || busyStatus} onClick={() => move(1)} title="Move later stage" aria-label="Move application to next stage">→</Button>
+            <Button size="sm" variant="danger" disabled={deleting} onClick={removeApp} title="Archive application (soft delete — restore from archived view)" aria-label="Archive application">🗃️</Button>
           </div>
         </div>
       </Card>
@@ -446,11 +446,11 @@ export function ApplicationDetail({ id }: { id: string; sessionEmail: string }) 
                       {ev.note && <p className="mt-0.5 text-xs">{ev.note}</p>}
                     </div>
                     {isPrep && (
-                      <Button size="sm" variant="paper" title={open ? "Hide interview prep" : "Interview prep"} onClick={() => setDraft(ev._id, { open: !open })}>
+                      <Button size="sm" variant="paper" title={open ? "Hide interview prep" : "Interview prep"} aria-label={open ? "Hide interview prep" : "Show interview prep"} aria-expanded={open} onClick={() => setDraft(ev._id, { open: !open })}>
                         🎯
                       </Button>
                     )}
-                    <Button size="sm" variant="danger" title="Delete event" onClick={() => removeEvent(ev)}>✕</Button>
+                    <Button size="sm" variant="danger" title="Delete event" aria-label="Delete timeline event" onClick={() => removeEvent(ev)}>✕</Button>
                   </div>
 
                   {isPrep && open && (
@@ -475,6 +475,7 @@ export function ApplicationDetail({ id }: { id: string; sessionEmail: string }) 
                               <button
                                 type="button"
                                 title="Remove question"
+                                aria-label="Remove question"
                                 disabled={busy}
                                 onClick={() => removeQuestion(ev, qi)}
                                 className="opacity-50 transition hover:text-blood hover:opacity-100 disabled:opacity-25"
@@ -519,16 +520,17 @@ export function ApplicationDetail({ id }: { id: string; sessionEmail: string }) 
           <form onSubmit={addEvent} className="mt-4 flex flex-col gap-2 border-t border-ink/15 pt-3">
             <p className="text-xs font-bold uppercase tracking-wider text-ink-soft">Add event</p>
             <div className="grid grid-cols-2 gap-2">
-              <select className={inputCls} value={evType} onChange={(e) => setEvType(e.target.value)}>
+              <select className={inputCls} aria-label="Event type" value={evType} onChange={(e) => setEvType(e.target.value)}>
                 {MANUAL_TYPES.map((t) => (
                   <option key={t} value={t}>{EVENT_META[t].label}</option>
                 ))}
               </select>
-              <input type="date" className={inputCls} value={evDate} onChange={(e) => setEvDate(e.target.value)} />
+              <input type="date" aria-label="Event date" className={inputCls} value={evDate} onChange={(e) => setEvDate(e.target.value)} />
             </div>
             <input
               className={inputCls}
               placeholder="e.g. Sent follow-up email…"
+              aria-label="Event note"
               value={evNote}
               onChange={(e) => setEvNote(e.target.value)}
             />
@@ -538,6 +540,7 @@ export function ApplicationDetail({ id }: { id: string; sessionEmail: string }) 
                   rows={2}
                   className={inputCls}
                   placeholder="🎯 Planned questions (one per line)"
+                  aria-label="Planned interview questions"
                   value={evQuestions}
                   onChange={(e) => setEvQuestions(e.target.value)}
                 />
@@ -545,6 +548,7 @@ export function ApplicationDetail({ id }: { id: string; sessionEmail: string }) 
                   rows={2}
                   className={inputCls}
                   placeholder="📝 Prep notes — talking points, answers…"
+                  aria-label="Prep notes"
                   value={evPrepNote}
                   onChange={(e) => setEvPrepNote(e.target.value)}
                 />
