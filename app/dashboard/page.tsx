@@ -29,14 +29,22 @@ export default async function DashboardPage() {
             use ← → to move applications between stages
           </p>
         </div>
-        <form action="/api/auth/logout" method="post">
-          <button
-            type="submit"
-            className="rounded-md border-2 border-b-4 border-blood-dark/70 bg-gradient-to-b from-blood-light to-blood px-4 py-2 text-sm font-semibold text-paper-light shadow-bevel-sm transition active:translate-y-px active:border-b-2"
+        <div className="flex items-center gap-2">
+          <Link
+            href="/account"
+            className="rounded-md border-2 border-b-4 border-paper-dark/80 bg-gradient-to-b from-paper-light to-paper px-4 py-2 text-sm font-semibold text-ink shadow-bevel-sm transition active:translate-y-px active:border-b-2"
           >
-            Log out
-          </button>
-        </form>
+            ⚙️ Account
+          </Link>
+          <form action="/api/auth/logout" method="post">
+            <button
+              type="submit"
+              className="rounded-md border-2 border-b-4 border-blood-dark/70 bg-gradient-to-b from-blood-light to-blood px-4 py-2 text-sm font-semibold text-paper-light shadow-bevel-sm transition active:translate-y-px active:border-b-2"
+            >
+              Log out
+            </button>
+          </form>
+        </div>
       </header>
 
       <OverviewStats />

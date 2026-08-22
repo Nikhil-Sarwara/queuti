@@ -99,6 +99,10 @@ export default function LoginPage() {
               >
                 Register
               </button>
+              {" · "}
+              <Link href="/forgot-password" className="font-semibold underline">
+                Forgot password?
+              </Link>
             </>
           ) : (
             <>

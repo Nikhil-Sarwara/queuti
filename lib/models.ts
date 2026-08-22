@@ -81,6 +81,10 @@ export interface User {
   email: string;
   passwordHash?: string;
   name?: string;
+  /** SHA-256 hash of the active password-reset token (see lib/reset.ts). */
+  resetTokenHash?: string;
+  /** When the current reset token expires (1h after issue). */
+  resetTokenExpiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }

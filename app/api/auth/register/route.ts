@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { users } from "@/lib/models";
-import { hashPassword, signSession } from "@/lib/auth";
+import { hashPassword, signSession, sessionCookieOptions } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -52,11 +52,6 @@ export async function POST(req: Request) {
   });
 
   const res = NextResponse.json({ token, user }, { status: 201 });
-  res.cookies.set("queuti_token", token, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7, // 7d
-  });
+  res.cookies.set("queuti_token", token, sessionCookieOptions());
   return res;
 }
