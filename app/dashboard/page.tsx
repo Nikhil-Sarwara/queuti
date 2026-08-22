@@ -5,6 +5,7 @@ import { verifySession } from "@/lib/auth";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import { OverviewStats } from "@/components/OverviewStats";
+import { CompaniesPanel } from "@/components/CompaniesPanel";
 import { MlPanel } from "@/components/MlPanel";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +43,8 @@ export default async function DashboardPage() {
       <KanbanBoard />
 
       <AnalyticsDashboard />
+
+      <CompaniesPanel />
 
       <MlPanel />
 
