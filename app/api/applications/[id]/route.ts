@@ -24,6 +24,7 @@ const EDITABLE_FIELDS = [
   "source",
   "salary",
   "notes",
+  "jd",
 ] as const;
 
 function str(v: unknown) {
@@ -176,6 +177,7 @@ function serialize(app: Application) {
     dateApplied: app.dateApplied.toISOString(),
     salary: app.salary || "",
     notes: app.notes || "",
+    jd: app.jd || "",
     createdAt: app.createdAt.toISOString(),
     updatedAt: app.updatedAt.toISOString(),
   };

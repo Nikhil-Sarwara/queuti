@@ -32,6 +32,8 @@ export interface Application {
   respondedAt?: Date;
   salary?: string;
   notes?: string;
+  /** Pasted job description — input to the browser role-fit scorer (#17). */
+  jd?: string;
   createdAt: Date;
   updatedAt: Date;
 }

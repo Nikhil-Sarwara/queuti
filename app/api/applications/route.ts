@@ -32,6 +32,7 @@ function serialize(app: Application) {
     dateApplied: app.dateApplied.toISOString(),
     salary: app.salary || "",
     notes: app.notes || "",
+    jd: app.jd || "",
     createdAt: app.createdAt.toISOString(),
     updatedAt: app.updatedAt.toISOString(),
   };
@@ -57,6 +58,7 @@ function parseBody(body: Record<string, unknown>) {
     source: str(body.source),
     salary: str(body.salary),
     notes: str(body.notes),
+    jd: str(body.jd),
     status,
     dateApplied,
   };

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge, Button, Card, TextField } from "@/components/ui";
+import { RoleFitScore } from "@/components/RoleFitScore";
 
 export type DetailStatus =
   | "applied"
@@ -23,6 +24,7 @@ interface DetailApp {
   dateApplied: string;
   salary: string;
   notes: string;
+  jd: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -121,6 +123,7 @@ export function ApplicationDetail({ id }: { id: string; sessionEmail: string }) 
   const [error, setError] = useState("");
 
   const [notes, setNotes] = useState("");
+  const [jd, setJd] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
   const [busyStatus, setBusyStatus] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -141,6 +144,7 @@ export function ApplicationDetail({ id }: { id: string; sessionEmail: string }) 
       ]);
       setApp(a.application);
       setNotes(a.application.notes || "");
+      setJd(a.application.jd || "");
       setEvents(ev.events);
       setCompanies(co.companies);
       setContacts(ct.contacts);
@@ -203,7 +207,7 @@ export function ApplicationDetail({ id }: { id: string; sessionEmail: string }) 
     try {
       const { application } = await api<{ application: DetailApp }>(
         `/api/applications/${id}`,
-        { method: "PATCH", body: JSON.stringify({ notes }) }
+        { method: "PATCH", body: JSON.stringify({ notes, jd }) }
       );
       setApp(application);
     } catch (e) {
@@ -295,6 +299,11 @@ export function ApplicationDetail({ id }: { id: string; sessionEmail: string }) 
                 </a>
               )}
             </div>
+            {app.jd && (
+              <p className="mt-2">
+                <RoleFitScore jd={app.jd} />
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-1.5">
             <Button size="sm" variant="paper" disabled={statusIdx === 0 || busyStatus} onClick={() => move(-1)} title="Move earlier stage">←</Button>
@@ -357,21 +366,35 @@ export function ApplicationDetail({ id }: { id: string; sessionEmail: string }) 
         </Card>
 
         <div className="flex flex-col gap-4">
-          {/* ---- notes ---- */}
+          {/* ---- notes + job description ---- */}
           <Card material="wood" framed className="shadow-bevel">
             <h3 className="font-display text-base font-bold text-ink text-engraved">
-              📝 Notes
+              📝 Notes & Job description
             </h3>
+            <label className="mt-3 block text-xs font-semibold uppercase tracking-wider text-ink-soft">
+              Notes
+            </label>
             <textarea
-              rows={5}
+              rows={4}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Interview prep, follow-up plan, salary expectations…"
-              className="mt-3 w-full rounded-md border border-ink/30 bg-ink/10 px-3 py-2 text-sm text-ink shadow-engraved outline-none transition placeholder:text-ink-faint focus:border-brass focus:bg-paper-light/60 focus:ring-2 focus:ring-brass/30"
+              className="mt-1.5 w-full rounded-md border border-ink/30 bg-ink/10 px-3 py-2 text-sm text-ink shadow-engraved outline-none transition placeholder:text-ink-faint focus:border-brass focus:bg-paper-light/60 focus:ring-2 focus:ring-brass/30"
             />
-            <div className="mt-2 flex justify-end">
+            <label className="mt-3 block text-xs font-semibold uppercase tracking-wider text-ink-soft">
+              Job description <span className="normal-case opacity-60">(paste it — the browser ML scores your role fit)</span>
+            </label>
+            <textarea
+              rows={6}
+              value={jd}
+              onChange={(e) => setJd(e.target.value)}
+              placeholder="Paste the full job description here…"
+              className="mt-1.5 w-full rounded-md border border-ink/30 bg-ink/10 px-3 py-2 text-sm text-ink shadow-engraved outline-none transition placeholder:text-ink-faint focus:border-brass focus:bg-paper-light/60 focus:ring-2 focus:ring-brass/30"
+            />
+            <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
+              {jd.trim() && <RoleFitScore jd={jd} />}
               <Button type="button" variant="brass" size="sm" onClick={saveNotes} disabled={savingNotes}>
-                {savingNotes ? "Saving…" : "💾 Save notes"}
+                {savingNotes ? "Saving…" : "💾 Save notes & JD"}
               </Button>
             </div>
           </Card>

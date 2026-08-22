@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Badge, Button, Card, TextField } from "@/components/ui";
 import { ApplicationsTable } from "@/components/ApplicationsTable";
+import { RoleFitScore } from "@/components/RoleFitScore";
 
 export type AppStatus =
   | "applied"
@@ -24,6 +25,7 @@ export interface KanbanApp {
   dateApplied: string;
   salary: string;
   notes: string;
+  jd: string;
 }
 
 const STATUSES: AppStatus[] = [
@@ -353,6 +355,11 @@ export function KanbanBoard() {
                     </p>
                     {app.salary && (
                       <p className="mt-0.5 text-[11px] font-semibold text-moss-dark">💰 {app.salary}</p>
+                    )}
+                    {app.jd && (
+                      <p className="mt-1">
+                        <RoleFitScore jd={app.jd} />
+                      </p>
                     )}
                     {app.notes && (
                       <p className="mt-1 line-clamp-2 text-[11px] italic opacity-70">{app.notes}</p>

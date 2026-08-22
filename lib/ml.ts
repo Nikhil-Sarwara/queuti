@@ -114,6 +114,34 @@ export interface JobScoreResult {
 }
 
 /**
+ * Per-application role-fit: classify a job description against the 12-role
+ * taxonomy and return the best-matching role with its confidence. Powers the
+ * score badge on kanban cards and the application detail page (#17).
+ */
+export async function matchRole(
+  description: string
+): Promise<JobScoreResult | { error: string }> {
+  const pipe = await loadPipeline();
+  if (!pipe) return { error: "Model failed to load — check network and retry." };
+  const text = description.trim();
+  if (!text) return { error: "No job description to analyse yet." };
+
+  const out = (await pipe(text, ROLE_LABELS)) as import(
+    "@xenova/transformers"
+  ).ZeroShotClassificationOutput;
+  let best = 0;
+  for (let i = 1; i < out.labels.length; i++) {
+    if (out.scores[i] > out.scores[best]) best = i;
+  }
+  return {
+    role: out.labels[best],
+    score: Math.round(out.scores[best] * 100),
+    labels: out.labels,
+    scores: out.scores.map((s) => Math.round(s * 100)),
+  };
+}
+
+/**
  * Job-score classifier: given a pasted job description + target role,
  * zero-shot classify ["A {role} role", "Not a {role} role"] and return
  * the fit percentage for the positive label.
