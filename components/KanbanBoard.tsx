@@ -26,6 +26,7 @@ export interface KanbanApp {
   salary: string;
   notes: string;
   jd: string;
+  updatedAt: string;
 }
 
 const STATUSES: AppStatus[] = [
@@ -83,6 +84,12 @@ function fmtDate(iso: string) {
 export function KanbanBoard() {
   const [apps, setApps] = useState<KanbanApp[]>([]);
   const [view, setView] = useState<"board" | "table">("board");
+  // board filters (#20)
+  const [hiddenStatuses, setHiddenStatuses] = useState<Set<AppStatus>>(new Set());
+  const [companyQ, setCompanyQ] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [boardSort, setBoardSort] = useState<"date-desc" | "updated-desc" | "updated-asc">("date-desc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [form, setForm] = useState(EMPTY_FORM);
@@ -236,7 +243,40 @@ export function KanbanBoard() {
     reader.readAsText(file);
   }
 
-  const byStatus = (s: AppStatus) => apps.filter((a) => a.status === s);
+  const toggleStatus = (s: AppStatus) =>
+    setHiddenStatuses((prev) => {
+      const next = new Set(prev);
+      if (next.has(s)) next.delete(s);
+      else next.add(s);
+      return next;
+    });
+
+  const filtersActive =
+    hiddenStatuses.size > 0 || companyQ.trim() !== "" || dateFrom !== "" || dateTo !== "";
+
+  const need = companyQ.trim().toLowerCase();
+  const visible = apps.filter((a) => {
+    if (hiddenStatuses.has(a.status)) return false;
+    if (need && !a.companyName.toLowerCase().includes(need)) return false;
+    const day = a.dateApplied.slice(0, 10);
+    if (dateFrom && day < dateFrom) return false;
+    if (dateTo && day > dateTo) return false;
+    return true;
+  });
+  const visibleSorted = [...visible];
+  if (boardSort === "date-desc") visibleSorted.sort((a, b) => b.dateApplied.localeCompare(a.dateApplied));
+  else if (boardSort === "updated-desc") visibleSorted.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  else visibleSorted.sort((a, b) => a.updatedAt.localeCompare(b.updatedAt));
+
+  const resetFilters = () => {
+    setHiddenStatuses(new Set());
+    setCompanyQ("");
+    setDateFrom("");
+    setDateTo("");
+    setBoardSort("date-desc");
+  };
+
+  const byStatus = (s: AppStatus) => visibleSorted.filter((a) => a.status === s);
 
   return (
     <div className="flex flex-col gap-4">
@@ -392,8 +432,86 @@ export function KanbanBoard() {
           {view === "table" ? (
             <ApplicationsTable apps={apps} />
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          {STATUSES.map((s) => (
+            <>
+              {/* board filter bar (#20) */}
+              <Card material="paper" framed className="shadow-bevel-sm">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="mr-1 text-[11px] font-bold uppercase tracking-wider text-ink-soft">
+                    Stages:
+                  </span>
+                  {STATUSES.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => toggleStatus(s)}
+                      title={hiddenStatuses.has(s) ? `Show ${COLUMN_META[s].label}` : `Hide ${COLUMN_META[s].label}`}
+                      className={`rounded-full border px-2.5 py-1 text-[11px] font-bold shadow-bevel-sm transition ${
+                        hiddenStatuses.has(s)
+                          ? "border-ink/20 bg-paper-dark/60 text-ink-faint opacity-60 line-through"
+                          : COLUMN_META[s].cls
+                      }`}
+                    >
+                      {COLUMN_META[s].label}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-2.5 grid grid-cols-2 gap-2 md:grid-cols-4">
+                  <div className="col-span-2 md:col-span-1">
+                    <TextField
+                      label="Company"
+                      name="board-company"
+                      placeholder="Filter by company…"
+                      value={companyQ}
+                      onChange={(e) => setCompanyQ(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-ink-soft">From</label>
+                    <input
+                      type="date"
+                      className="mt-1.5 w-full rounded-md border border-ink/30 bg-ink/10 px-2.5 py-2 text-sm text-ink shadow-engraved outline-none transition focus:border-brass focus:bg-paper-light/60 focus:ring-2 focus:ring-brass/30"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-ink-soft">To</label>
+                    <input
+                      type="date"
+                      className="mt-1.5 w-full rounded-md border border-ink/30 bg-ink/10 px-2.5 py-2 text-sm text-ink shadow-engraved outline-none transition focus:border-brass focus:bg-paper-light/60 focus:ring-2 focus:ring-brass/30"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-ink-soft">Sort</label>
+                    <select
+                      className="rounded-md border border-ink/30 bg-ink/10 px-2.5 py-2 text-sm text-ink shadow-engraved outline-none transition focus:border-brass focus:bg-paper-light/60 focus:ring-2 focus:ring-brass/30"
+                      value={boardSort}
+                      onChange={(e) => setBoardSort(e.target.value as typeof boardSort)}
+                    >
+                      <option value="date-desc">Date applied (newest)</option>
+                      <option value="updated-desc">Updated (newest)</option>
+                      <option value="updated-asc">Updated (oldest)</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {filtersActive && (
+                      <Button type="button" variant="paper" size="sm" onClick={resetFilters}>
+                        ↺ Reset filters
+                      </Button>
+                    )}
+                    <span className="text-[11px] uppercase tracking-wider opacity-60">
+                      {visible.length} of {apps.length} shown
+                    </span>
+                  </div>
+                </div>
+              </Card>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {STATUSES.filter((s) => !hiddenStatuses.has(s)).map((s) => (
             <div key={s} className="flex flex-col gap-2">
               <div className={`rounded-md border border-ink/20 bg-gradient-to-b px-3 py-1.5 text-center text-xs font-bold uppercase tracking-widest shadow-bevel-sm ${COLUMN_META[s].cls}`}>
                 {COLUMN_META[s].label}
@@ -404,7 +522,7 @@ export function KanbanBoard() {
               <div className="flex min-h-[120px] flex-col gap-2 rounded-lg border-2 border-wood-dark/40 bg-wood-light/30 p-2 shadow-engraved">
                 {byStatus(s).length === 0 && (
                   <p className="p-2 text-center text-[11px] italic text-ink-faint">
-                    empty slot
+                    {filtersActive ? "no matches" : "empty slot"}
                   </p>
                 )}
                 {byStatus(s).map((app) => (
@@ -482,7 +600,8 @@ export function KanbanBoard() {
               </div>
             </div>
           ))}
-            </div>
+              </div>
+            </>
           )}
         </>
       )}
