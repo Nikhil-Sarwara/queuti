@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Badge, Card, TextField } from "@/components/ui";
 import type { KanbanApp } from "@/components/KanbanBoard";
 
@@ -167,7 +168,14 @@ export function ApplicationsTable({ apps }: { apps: KanbanApp[] }) {
                       i % 2 === 1 ? "bg-ink/[0.035]" : ""
                     }`}
                   >
-                    <td className="px-3 py-2 font-semibold">{a.title}</td>
+                    <td className="px-3 py-2 font-semibold">
+                      <Link
+                        href={`/applications/${a._id}`}
+                        className="underline-offset-2 hover:text-brass-dark hover:underline"
+                      >
+                        {a.title}
+                      </Link>
+                    </td>
                     <td className="px-3 py-2 text-ink-soft">
                       {a.companyName || <span className="opacity-40">—</span>}
                     </td>

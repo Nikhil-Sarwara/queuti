@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { Badge, Button, Card, TextField } from "@/components/ui";
 import { ApplicationsTable } from "@/components/ApplicationsTable";
 
@@ -335,7 +336,12 @@ export function KanbanBoard() {
                 {byStatus(s).map((app) => (
                   <Card key={app._id} material="paper" className="!p-3 shadow-bevel-sm">
                     <div className="flex items-start justify-between gap-1">
-                      <p className="text-sm font-bold leading-tight">{app.title}</p>
+                      <Link
+                        href={`/applications/${app._id}`}
+                        className="text-sm font-bold leading-tight text-ink underline-offset-2 hover:text-brass-dark hover:underline"
+                      >
+                        {app.title}
+                      </Link>
                       <Badge tone={app.status} dot className="shrink-0 !px-1.5 !text-[10px]" />
                     </div>
                     {app.companyName && (

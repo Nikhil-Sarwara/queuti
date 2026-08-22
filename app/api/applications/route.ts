@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
-import { applications, ensureIndexes } from "@/lib/models";
+import { applications, ensureIndexes, events } from "@/lib/models";
 import { requireSession } from "@/lib/auth";
 import { cacheDel } from "@/lib/redis";
-import type { Application, ApplicationStatus } from "@/lib/models";
+import type { Application, ApplicationEvent, ApplicationStatus } from "@/lib/models";
 
 export const dynamic = "force-dynamic";
 
@@ -117,6 +117,18 @@ export async function POST(req: Request) {
   const res = await col.insertOne(doc);
   await ensureIndexes().catch(() => {});
   await cacheDel(`analytics:${session.userId}`).catch(() => {});
+
+  // Stage history: the moment of application.
+  const evCol = await events();
+  const ev: ApplicationEvent = {
+    userId: new ObjectId(session.userId),
+    applicationId: res.insertedId,
+    type: "applied",
+    occurredAt: new Date(fields.dateApplied),
+    note: "Application submitted",
+    createdAt: now,
+  };
+  await evCol.insertOne(ev).catch(() => {});
 
   return NextResponse.json(
     { application: serialize({ ...doc, _id: res.insertedId }) },

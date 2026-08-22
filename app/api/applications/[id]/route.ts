@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
-import { applications } from "@/lib/models";
+import { applications, events } from "@/lib/models";
 import { requireSession } from "@/lib/auth";
 import { cacheDel } from "@/lib/redis";
-import type { Application, ApplicationStatus } from "@/lib/models";
+import type { Application, ApplicationEvent, ApplicationStatus } from "@/lib/models";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +28,30 @@ const EDITABLE_FIELDS = [
 
 function str(v: unknown) {
   return typeof v === "string" ? v.trim() : v == null ? "" : String(v);
+}
+
+/** GET /api/applications/[id] — fetch one application (detail page). */
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  const auth = await requireSession(req);
+  if ("error" in auth) return auth.error;
+  const { session } = auth;
+
+  let id: ObjectId;
+  try {
+    id = new ObjectId(params.id);
+  } catch {
+    return NextResponse.json({ error: "Invalid application id" }, { status: 400 });
+  }
+
+  const col = await applications();
+  const doc = await col.findOne({ _id: id, userId: new ObjectId(session.userId) });
+  if (!doc) {
+    return NextResponse.json({ error: "Application not found" }, { status: 404 });
+  }
+  return NextResponse.json({ application: serialize(doc) });
 }
 
 /** PATCH /api/applications/[id] — update fields and/or move status. */
@@ -80,6 +104,20 @@ export async function PATCH(
       !existing.respondedAt
     ) {
       $set.respondedAt = new Date();
+    }
+    // Stage history: record the move.
+    if (next !== existing.status) {
+      const now = new Date();
+      const evCol = await events();
+      const ev: ApplicationEvent = {
+        userId: new ObjectId(session.userId),
+        applicationId: id,
+        type: next,
+        occurredAt: now,
+        note: `Moved from ${existing.status} to ${next}`,
+        createdAt: now,
+      };
+      await evCol.insertOne(ev).catch(() => {});
     }
   }
   if (body.dateApplied !== undefined) {
