@@ -34,7 +34,7 @@ Order matters. Agents pick the first task with status `todo`.
 | 21 | Skeuomorphic polish pass | done | toasts, skeletons, empty states, focus states |
 | 22 | Professional page polish + PWA | done | 404, error boundary, icon, manifest, robots/sitemap |
 | 23 | Docs upgrade | done | README, .env.example, CONTRIBUTING, TASKS |
-| 24 | Auth hardening | todo | in issue queue |
+| 24 | Auth hardening | done | bc22792 — reset flow, sliding sessions, /account, CSRF-safe cookies |
 | 25 | API hardening | todo | in issue queue |
 | 26 | Data quality UX | todo | in issue queue |
 
