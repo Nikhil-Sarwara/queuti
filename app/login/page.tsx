@@ -5,9 +5,16 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card, TextField, Button } from "@/components/ui";
 
+// `?mode=register` (landing CTAs) preselects the register tab.
+const initialMode = (): "login" | "register" =>
+  typeof window !== "undefined" &&
+  new URLSearchParams(window.location.search).get("mode") === "register"
+    ? "register"
+    : "login";
+
 export default function LoginPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
