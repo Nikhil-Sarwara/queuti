@@ -11,3 +11,4 @@ vercel/
 .build-ok-marker
 .vercel
 .env*
+!.env.example
