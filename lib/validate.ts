@@ -36,6 +36,11 @@ export function isEmailLike(s: string): boolean {
   return EMAIL_RE.test(s);
 }
 
+/** Escape regex metacharacters — safe for user input in `new RegExp(...)`. */
+export function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export function isHttpUrl(s: string): boolean {
   return HTTP_URL_RE.test(s);
 }

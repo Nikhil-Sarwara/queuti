@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   cleanStr,
   companyNameOf,
+  escapeRegex,
   isEmailLike,
   isHttpUrl,
   strTooLong,
@@ -36,6 +37,14 @@ describe("validation helpers (#25)", () => {
     expect(companyNameOf({ companyName: "" })).toBe("");
     expect(companyNameOf({ company: "  Stark Industries  " })).toBe("Stark Industries");
     expect(companyNameOf({ title: "no company here" })).toBe("");
+  });
+
+  it("escapes regex metacharacters for user search input (#32)", () => {
+    expect(escapeRegex("a.b(c)[d]{e}?*+^$|")).toBe(
+      "a\\.b\\(c\\)\\[d\\]\\{e\\}\\?\\*\\+\\^\\$\\|"
+    );
+    expect(escapeRegex("React Engineer")).toBe("React Engineer");
+    expect(escapeRegex("")).toBe("");
   });
 });
 

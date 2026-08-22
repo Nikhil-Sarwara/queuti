@@ -3,6 +3,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/Toaster";
 import { ThemeInit } from "./theme-init";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SearchPalette } from "@/components/SearchPalette";
 
 export const metadata: Metadata = {
   title: { default: "Queuti — Job Tracker & Market Intelligence", template: "%s · Queuti" },
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeInit />
         {children}
         <ThemeToggle />
+        <SearchPalette />
         <Toaster />
       </body>
     </html>
