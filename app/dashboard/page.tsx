@@ -53,6 +53,7 @@ export default async function DashboardPage() {
 
       <p className="mt-8 text-center text-xs opacity-50">
         <Link href="/" className="hover:underline">← Back to home</Link> ·{" "}
+        <Link href="/stats" className="hover:underline">🌍 Market intelligence</Link> ·{" "}
         <Link href="/dashboard" className="hover:underline">Refresh view</Link>
       </p>
     </main>
