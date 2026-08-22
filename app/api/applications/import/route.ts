@@ -64,11 +64,15 @@ export async function POST(req: Request) {
     const companyName = r.company || "";
     if (!title) {
       invalid++;
+      errors.push(`row ${i + 2}: missing title`);
       continue;
     }
     // Parse date: YYYY-MM-DD or ISO; fall back to today.
     let dateApplied = new Date(r.date || "");
-    if (Number.isNaN(dateApplied.getTime())) dateApplied = now;
+    if (Number.isNaN(dateApplied.getTime())) {
+      errors.push(`row ${i + 2}: invalid date "${r.date || ""}" — used today`);
+      dateApplied = now;
+    }
 
     // Idempotency: skip if this user already has title+company+date.
     const dup = await col.findOne({

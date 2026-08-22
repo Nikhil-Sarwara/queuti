@@ -91,6 +91,8 @@ export function KanbanBoard() {
   const [csvText, setCsvText] = useState("");
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState("");
+  const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [dragging, setDragging] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -166,28 +168,64 @@ export function KanbanBoard() {
     }
   }
 
-  async function importCsv() {
-    if (!csvText.trim()) return;
+  async function importCsvText(text: string) {
+    if (!text.trim()) return;
     setImporting(true);
     setImportResult("");
+    setImportErrors([]);
     setError("");
     try {
       const res = await fetch("/api/applications/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ csv: csvText }),
+        body: JSON.stringify({ csv: text }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || `Import failed (${res.status})`);
       setImportResult(
         `✅ Imported ${data.imported}, skipped ${data.skipped} duplicate${data.invalid ? ", " + data.invalid + " invalid" : ""}.`
       );
+      setImportErrors(data.errors || []);
       load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to import");
     } finally {
       setImporting(false);
     }
+  }
+
+  async function importCsv() {
+    await importCsvText(csvText);
+  }
+
+  function downloadTemplate() {
+    const blob = new Blob(
+      [
+        "date,title,company,apply_url,hiring_email\n" +
+          "2026-08-16,Software Engineer,Acme Corp,https://acme.com/jobs/123,hr@acme.com\n",
+      ],
+      { type: "text/csv" }
+    );
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "queuti-import-template.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result || "");
+      setCsvText(text);
+      importCsvText(text);
+    };
+    reader.readAsText(file);
   }
 
   function onFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -243,37 +281,71 @@ export function KanbanBoard() {
         </Card>
       )}
 
-      {/* ---- CSV import (desk drawer) ---- */}
+      {/* ---- CSV import + export (desk drawer) ---- */}
       <Card material="wood" framed className="shadow-bevel">
-        <details>
+        <details open={false}>
           <summary className="cursor-pointer select-none font-display text-base font-bold text-ink text-engraved">
-            📥 Import from CSV (jobhunt-applications.csv)
+            📥 CSV import & 📤 export (jobhunt-applications.csv)
           </summary>
           <div className="mt-3 flex flex-col gap-3">
-            <label className="flex cursor-pointer flex-col gap-1.5">
-              <span className="text-xs font-semibold uppercase tracking-wider text-ink-soft">
-                Choose file
-              </span>
-              <input
-                type="file"
-                accept=".csv,text/csv"
-                onChange={onFile}
-                className="block w-full text-sm text-ink-soft file:mr-3 file:rounded-md file:border-2 file:border-b-4 file:border-brass-dark/60 file:bg-gradient-to-b file:from-brass-light file:to-brass file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-ink file:shadow-bevel-sm file:transition hover:file:brightness-105"
-              />
-            </label>
+            <div className="flex flex-wrap items-center gap-3">
+              <a
+                href="/api/applications/export"
+                className="rounded-md border-2 border-b-4 border-moss-dark bg-gradient-to-b from-moss-light to-moss px-3 py-1.5 text-xs font-bold text-paper-light shadow-bevel-sm transition active:translate-y-px active:border-b-2"
+              >
+                📤 Export my applications (CSV)
+              </a>
+              <Button type="button" variant="paper" size="sm" onClick={downloadTemplate}>
+                📄 Download template CSV
+              </Button>
+            </div>
+
+            {/* drag & drop zone */}
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={onDrop}
+              className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed px-4 py-6 text-center transition ${
+                dragging
+                  ? "border-brass bg-brass/15 shadow-bevel-sm"
+                  : "border-brass/50 bg-paper-dark/30 hover:border-brass hover:bg-brass/5"
+              }`}
+            >
+              <label className="cursor-pointer text-sm font-semibold text-ink">
+                {dragging ? "🪂 Drop it!" : "📁 Drag & drop your CSV here"}
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={onFile}
+                  className="sr-only"
+                />
+              </label>
+              <p className="text-[11px] opacity-60">or click to choose a file (date,title,company,apply_url,hiring_email) — imports run automatically, duplicates are skipped</p>
+            </div>
+
             <textarea
               value={csvText}
               onChange={(e) => setCsvText(e.target.value)}
-              rows={6}
+              rows={5}
               placeholder={"…or paste CSV here:\ndate,title,company,apply_url,hiring_email\n2026-08-16,Software Engineer,Acme,https://acme.com/job,hr@acme.com"}
               className="w-full rounded-md border border-ink/30 bg-ink/10 px-3 py-2 font-mono text-xs text-ink shadow-engraved outline-none transition placeholder:text-ink-faint focus:border-brass focus:bg-paper-light/60 focus:ring-2 focus:ring-brass/30"
             />
             <div className="flex flex-wrap items-center gap-3">
               <Button type="button" variant="brass" onClick={importCsv} disabled={importing || !csvText.trim()}>
-                {importing ? "Importing…" : "🚚 Import applications"}
+                {importing ? "Importing…" : "🚚 Import pasted CSV"}
               </Button>
               {importResult && <p className="text-sm font-semibold text-moss-dark">{importResult}</p>}
             </div>
+            {importErrors.length > 0 && (
+              <ul className="max-h-40 overflow-y-auto rounded-md border border-blood/40 bg-blood/10 p-2.5 text-xs text-blood-dark">
+                {importErrors.map((msg, i) => (
+                  <li key={i} className="font-mono">⚠️ {msg}</li>
+                ))}
+              </ul>
+            )}
           </div>
         </details>
       </Card>
