@@ -43,6 +43,12 @@ export interface Application {
 }
 
 /** A tracked event in the lifecycle of an application (interview, follow-up…). */
+/** One planned interview-prep question (its `done` flag = prepared). */
+export interface PrepQuestion {
+  text: string;
+  done: boolean;
+}
+
 export interface ApplicationEvent {
   _id?: ObjectId;
   userId: ObjectId;
@@ -50,6 +56,10 @@ export interface ApplicationEvent {
   type: string; // "application", "screening", "interview", "offer", "rejection", "follow_up", …
   occurredAt: Date;
   note?: string;
+  /** Interview prep: planned question bank, each marked prepared/done (#34). */
+  questions?: PrepQuestion[];
+  /** Interview prep: free-text notes for this event (answers, talking points…). */
+  prepNote?: string;
   createdAt: Date;
 }
 

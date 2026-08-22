@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { applications, events } from "@/lib/models";
 import { requireSession } from "@/lib/auth";
-import type { ApplicationEvent } from "@/lib/models";
+import type { ApplicationEvent, PrepQuestion } from "@/lib/models";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +17,26 @@ const EVENT_TYPES = [
   "note",
 ] as const;
 
+const MAX_QUESTIONS = 50;
+
+/** Normalize incoming questions into {text, done} entries (#34). */
+function normalizeQuestions(raw: unknown): PrepQuestion[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out: PrepQuestion[] = [];
+  for (const q of raw.slice(0, MAX_QUESTIONS)) {
+    if (typeof q === "string") {
+      const t = q.trim();
+      if (t) out.push({ text: t, done: false });
+    } else if (q && typeof q === "object") {
+      const o = q as Record<string, unknown>;
+      if (typeof o.text === "string" && o.text.trim()) {
+        out.push({ text: o.text.trim(), done: o.done === true });
+      }
+    }
+  }
+  return out;
+}
+
 function serialize(ev: ApplicationEvent) {
   return {
     _id: ev._id instanceof ObjectId ? ev._id.toHexString() : String(ev._id),
@@ -27,6 +47,8 @@ function serialize(ev: ApplicationEvent) {
     type: ev.type,
     occurredAt: ev.occurredAt.toISOString(),
     note: ev.note || "",
+    questions: ev.questions || [],
+    prepNote: ev.prepNote || "",
     createdAt: ev.createdAt.toISOString(),
   };
 }
@@ -113,6 +135,11 @@ export async function POST(
     type,
     occurredAt,
     note: str(body.note),
+    questions: normalizeQuestions(body.questions),
+    prepNote:
+      typeof body.prepNote === "string" && body.prepNote.trim()
+        ? body.prepNote.trim()
+        : undefined,
     createdAt: now,
   };
   const res = await col.insertOne(doc);
