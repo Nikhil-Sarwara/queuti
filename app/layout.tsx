@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/Toaster";
+import { ThemeInit } from "./theme-init";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const metadata: Metadata = {
   title: { default: "Queuti — Job Tracker & Market Intelligence", template: "%s · Queuti" },
@@ -37,7 +39,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
+        <ThemeInit />
         {children}
+        <ThemeToggle />
         <Toaster />
       </body>
     </html>

@@ -1,42 +1,70 @@
 import type { Config } from "tailwindcss";
 
+/**
+ * Queuti's skeuomorphic design system (#31): every color/shadow is a CSS
+ * variable (see app/globals.css) resolved to `rgb(var(--x) / <alpha-value>)`
+ * so Tailwind opacity modifiers (bg-ink/10, border-brass/50, …) keep
+ * working, while the whole palette re-themes via `data-theme` on <html>.
+ */
 const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
         leather: {
-          100: "#e9d9c4",
-          200: "#d3b493",
-          300: "#b5865a",
-          400: "#96663f",
-          500: "#7a5434",
-          600: "#6b4a2f",
-          700: "#543a25",
-          800: "#3f2b1b",
-          900: "#2b1d12",
-          DEFAULT: "#6b4a2f",
+          100: "rgb(var(--leather-100) / <alpha-value>)",
+          200: "rgb(var(--leather-200) / <alpha-value>)",
+          300: "rgb(var(--leather-300) / <alpha-value>)",
+          400: "rgb(var(--leather-400) / <alpha-value>)",
+          500: "rgb(var(--leather-500) / <alpha-value>)",
+          600: "rgb(var(--leather-600) / <alpha-value>)",
+          700: "rgb(var(--leather-700) / <alpha-value>)",
+          800: "rgb(var(--leather-800) / <alpha-value>)",
+          900: "rgb(var(--leather-900) / <alpha-value>)",
+          DEFAULT: "rgb(var(--leather) / <alpha-value>)",
         },
-        wood: { light: "#c9a06b", DEFAULT: "#a97c4d", dark: "#7d5a36" },
-        paper: { light: "#f6f0e2", DEFAULT: "#ece4d4", dark: "#ddd3bd" },
-        brass: { light: "#e2c254", DEFAULT: "#c9a227", dark: "#a8861f" },
-        ink: { DEFAULT: "#2b2117", soft: "#5c4d3a", faint: "#8a7a63" },
-        blood: { light: "#b04a3a", DEFAULT: "#8e3b2e", dark: "#6e2c22" },
-        moss: { light: "#74864f", DEFAULT: "#5a6b3c", dark: "#46542e" },
+        wood: {
+          light: "rgb(var(--wood-light) / <alpha-value>)",
+          DEFAULT: "rgb(var(--wood) / <alpha-value>)",
+          dark: "rgb(var(--wood-dark) / <alpha-value>)",
+        },
+        paper: {
+          light: "rgb(var(--paper-light) / <alpha-value>)",
+          DEFAULT: "rgb(var(--paper) / <alpha-value>)",
+          dark: "rgb(var(--paper-dark) / <alpha-value>)",
+        },
+        brass: {
+          light: "rgb(var(--brass-light) / <alpha-value>)",
+          DEFAULT: "rgb(var(--brass) / <alpha-value>)",
+          dark: "rgb(var(--brass-dark) / <alpha-value>)",
+        },
+        ink: {
+          DEFAULT: "rgb(var(--ink) / <alpha-value>)",
+          soft: "rgb(var(--ink-soft) / <alpha-value>)",
+          faint: "rgb(var(--ink-faint) / <alpha-value>)",
+        },
+        blood: {
+          light: "rgb(var(--blood-light) / <alpha-value>)",
+          DEFAULT: "rgb(var(--blood) / <alpha-value>)",
+          dark: "rgb(var(--blood-dark) / <alpha-value>)",
+        },
+        moss: {
+          light: "rgb(var(--moss-light) / <alpha-value>)",
+          DEFAULT: "rgb(var(--moss) / <alpha-value>)",
+          dark: "rgb(var(--moss-dark) / <alpha-value>)",
+        },
       },
       boxShadow: {
         "bevel-sm":
-          "inset 0 1px 1px rgba(255,255,255,.5), inset 0 -1px 2px rgba(0,0,0,.28), 0 1px 2px rgba(0,0,0,.22)",
+          "inset 0 1px 1px var(--sh-hi), inset 0 -1px 2px var(--sh-lo), 0 1px 2px var(--sh-drop)",
         bevel:
-          "inset 0 1px 2px rgba(255,255,255,.55), inset 0 -2px 3px rgba(0,0,0,.3), 0 2px 4px rgba(0,0,0,.28)",
+          "inset 0 1px 2px var(--sh-hi), inset 0 -2px 3px var(--sh-lo), 0 2px 4px var(--sh-drop)",
         "bevel-lg":
-          "inset 0 1px 2px rgba(255,255,255,.6), inset 0 -3px 5px rgba(0,0,0,.32), 0 5px 12px rgba(0,0,0,.3)",
+          "inset 0 1px 2px var(--sh-hi-strong), inset 0 -3px 5px var(--sh-lo-strong), 0 5px 12px var(--sh-drop-lg)",
         pressed:
-          "inset 0 2px 5px rgba(0,0,0,.4), inset 0 -1px 1px rgba(255,255,255,.2), 0 1px 1px rgba(0,0,0,.15)",
-        engraved:
-          "inset 0 2px 5px rgba(43,33,23,.28), inset 0 -1px 1px rgba(255,255,255,.4)",
-        raised:
-          "0 4px 8px rgba(43,33,23,.3), inset 0 1px 1px rgba(255,255,255,.45)",
+          "inset 0 2px 5px var(--sh-lo-strong), inset 0 -1px 1px var(--sh-hi), 0 1px 1px var(--sh-drop)",
+        engraved: "inset 0 2px 5px var(--engrave-lo), inset 0 -1px 1px var(--engrave-hi)",
+        raised: "0 4px 8px var(--sh-drop-lg), inset 0 1px 1px var(--sh-hi)",
       },
       fontFamily: {
         display: ["Georgia", "Cambria", "Times New Roman", "serif"],

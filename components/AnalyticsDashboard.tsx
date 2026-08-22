@@ -111,7 +111,7 @@ export function AnalyticsDashboard() {
                   <span>{STAGE_META[f.status].label}</span>
                   <span className="font-bold">{f.count}</span>
                 </div>
-                <div className="h-3 overflow-hidden rounded-sm border border-ink/20 bg-paper-dark shadow-[inset_0_1px_2px_rgba(43,33,23,.35)]">
+                <div className="h-3 overflow-hidden rounded-sm border border-ink/20 bg-paper-dark shadow-[var(--track-inset)]">
                   <div
                     className={`h-full rounded-sm bg-gradient-to-b ${STAGE_META[f.status].bar} shadow-bevel-sm transition-all duration-500`}
                     style={{
@@ -147,7 +147,7 @@ export function AnalyticsDashboard() {
                   >
                     <span className="truncate">{s.source}</span>
                     <span className="flex items-center gap-2">
-                      <span className="hidden h-2 w-24 overflow-hidden rounded-sm border border-ink/20 bg-paper-dark shadow-[inset_0_1px_2px_rgba(43,33,23,.35)] sm:block">
+                      <span className="hidden h-2 w-24 overflow-hidden rounded-sm border border-ink/20 bg-paper-dark shadow-[var(--track-inset)] sm:block">
                         <span
                           className="block h-full rounded-sm bg-gradient-to-b from-brass-light to-brass shadow-bevel-sm"
                           style={{ width: `${pct}%` }}

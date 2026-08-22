@@ -2,11 +2,159 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --paper: #ece4d4;
-  --paper-light: #f6f0e2;
-  --paper-dark: #ddd3bd;
-  --ink: #2b2117;
+/* =====================================================================
+   Queuti design tokens (#31) — every color + shadow is a CSS variable so
+   the whole skeuomorphic system can re-theme with one `data-theme`
+   attribute on <html>. Values are RGB triplets (used as
+   `rgb(var(--x) / <alpha-value>)` so Tailwind opacity modifiers keep
+   working). Three themes: paper (default, light), dark (leather-toned),
+   midnight (cool near-black).
+   ===================================================================== */
+
+:root,
+[data-theme="paper"] {
+  /* paper / ink */
+  --paper-light: 246 240 226;
+  --paper: 236 228 212;
+  --paper-dark: 221 211 189;
+  --ink: 43 33 23;
+  --ink-soft: 92 77 58;
+  --ink-faint: 138 122 99;
+
+  /* accents */
+  --leather-100: 233 217 196;
+  --leather-200: 211 180 147;
+  --leather-300: 181 134 90;
+  --leather-400: 150 102 63;
+  --leather-500: 122 84 52;
+  --leather-600: 107 74 47;
+  --leather-700: 84 58 37;
+  --leather-800: 63 43 27;
+  --leather-900: 43 29 18;
+  --leather: 107 74 47;
+  --wood-light: 201 160 107;
+  --wood: 169 124 77;
+  --wood-dark: 125 90 54;
+  --brass-light: 226 194 84;
+  --brass: 201 162 39;
+  --brass-dark: 168 134 31;
+  --blood-light: 176 74 58;
+  --blood: 142 59 46;
+  --blood-dark: 110 44 34;
+  --moss-light: 116 134 79;
+  --moss: 90 107 60;
+  --moss-dark: 70 84 46;
+
+  /* bevel/pressed/engraved shadows — highlight + dark inset + drop */
+  --sh-hi: rgba(255, 255, 255, 0.5);
+  --sh-hi-strong: rgba(255, 255, 255, 0.6);
+  --sh-lo: rgba(0, 0, 0, 0.28);
+  --sh-lo-strong: rgba(0, 0, 0, 0.32);
+  --sh-drop: rgba(0, 0, 0, 0.22);
+  --sh-drop-lg: rgba(0, 0, 0, 0.3);
+  --engrave-hi: rgba(255, 255, 255, 0.45);
+  --engrave-lo: rgba(0, 0, 0, 0.25);
+
+  /* charts + progress tracks (MarketIntel, AnalyticsDashboard) */
+  --graph-grid: 221 211 189;
+  --graph-tip-bg: 246 240 226;
+  --graph-tip-border: 168 134 31;
+  --graph-cursor: rgba(201, 162, 39, 0.12);
+  --track-inset: rgba(43, 33, 23, 0.35);
+}
+
+[data-theme="dark"] {
+  --paper-light: 58 47 35;
+  --paper: 49 39 28;
+  --paper-dark: 40 31 22;
+  --ink: 236 228 212;
+  --ink-soft: 207 194 168;
+  --ink-faint: 168 152 126;
+
+  --leather-100: 60 48 36;
+  --leather-200: 74 58 43;
+  --leather-300: 92 70 50;
+  --leather-400: 110 84 58;
+  --leather-500: 128 98 68;
+  --leather-600: 120 90 62;
+  --leather-700: 94 70 48;
+  --leather-800: 68 49 33;
+  --leather-900: 46 33 22;
+  --leather: 120 90 62;
+  --wood-light: 181 142 94;
+  --wood: 150 112 74;
+  --wood-dark: 107 80 48;
+  --brass-light: 216 184 74;
+  --brass: 201 162 39;
+  --brass-dark: 168 134 31;
+  --blood-light: 192 90 72;
+  --blood: 160 67 50;
+  --blood-dark: 124 51 38;
+  --moss-light: 139 160 95;
+  --moss: 111 130 71;
+  --moss-dark: 86 102 58;
+
+  --sh-hi: rgba(255, 255, 255, 0.08);
+  --sh-hi-strong: rgba(255, 255, 255, 0.12);
+  --sh-lo: rgba(0, 0, 0, 0.5);
+  --sh-lo-strong: rgba(0, 0, 0, 0.55);
+  --sh-drop: rgba(0, 0, 0, 0.45);
+  --sh-drop-lg: rgba(0, 0, 0, 0.55);
+  --engrave-hi: rgba(255, 255, 255, 0.12);
+  --engrave-lo: rgba(0, 0, 0, 0.6);
+
+  --graph-grid: 74 62 46;
+  --graph-tip-bg: 58 47 35;
+  --graph-tip-border: 168 134 31;
+  --graph-cursor: rgba(201, 162, 39, 0.16);
+  --track-inset: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="midnight"] {
+  --paper-light: 25 29 38;
+  --paper: 20 24 32;
+  --paper-dark: 16 19 26;
+  --ink: 219 226 238;
+  --ink-soft: 169 180 198;
+  --ink-faint: 124 135 153;
+
+  --leather-100: 40 44 56;
+  --leather-200: 52 57 72;
+  --leather-300: 66 72 90;
+  --leather-400: 82 89 110;
+  --leather-500: 100 108 132;
+  --leather-600: 92 100 122;
+  --leather-700: 70 76 96;
+  --leather-800: 48 53 68;
+  --leather-900: 32 35 46;
+  --leather: 92 100 122;
+  --wood-light: 147 112 76;
+  --wood: 119 96 63;
+  --wood-dark: 87 69 44;
+  --brass-light: 212 182 78;
+  --brass: 201 162 39;
+  --brass-dark: 143 113 23;
+  --blood-light: 192 90 72;
+  --blood: 160 67 50;
+  --blood-dark: 124 51 38;
+  --moss-light: 139 160 95;
+  --moss: 111 130 71;
+  --moss-dark: 86 102 58;
+
+  --sh-hi: rgba(255, 255, 255, 0.07);
+  --sh-hi-strong: rgba(255, 255, 255, 0.11);
+  --sh-lo: rgba(0, 0, 0, 0.55);
+  --sh-lo-strong: rgba(0, 0, 0, 0.6);
+  --sh-drop: rgba(0, 0, 0, 0.5);
+  --sh-drop-lg: rgba(0, 0, 0, 0.6);
+  --engrave-hi: rgba(255, 255, 255, 0.1);
+  --engrave-lo: rgba(0, 0, 0, 0.65);
+
+  --graph-grid: 43 50 66;
+  --graph-tip-bg: 25 29 38;
+  --graph-tip-border: 143 113 23;
+  --graph-cursor: rgba(201, 162, 39, 0.16);
+  --track-inset: rgba(0, 0, 0, 0.55);
 }
 
 @keyframes queutiToastIn {
@@ -22,7 +170,7 @@
 
 /* keyboard focus: brass rim everywhere */
 :focus-visible {
-  outline: 2px solid #c9a227;
+  outline: 2px solid rgb(var(--brass));
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -31,9 +179,9 @@ body {
   @apply text-ink antialiased;
   min-height: 100vh;
   background:
-    radial-gradient(1200px 800px at 15% -10%, rgba(201, 162, 39, 0.12), transparent 60%),
-    radial-gradient(1000px 700px at 110% 25%, rgba(122, 84, 52, 0.16), transparent 55%),
-    linear-gradient(160deg, var(--paper-light), var(--paper) 45%, var(--paper-dark));
+    radial-gradient(1200px 800px at 15% -10%, rgb(var(--brass) / 0.12), transparent 60%),
+    radial-gradient(1000px 700px at 110% 25%, rgb(var(--leather-500) / 0.16), transparent 55%),
+    linear-gradient(160deg, rgb(var(--paper-light) / 1), rgb(var(--paper) / 1) 45%, rgb(var(--paper-dark) / 1));
   background-attachment: fixed;
 }
 
@@ -59,11 +207,11 @@ body {
 /* ---- typography treatments ---- */
 .text-engraved {
   text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.45),
-    0 -1px 1px rgba(0, 0, 0, 0.25);
+    0 1px 0 var(--engrave-hi),
+    0 -1px 1px var(--engrave-lo);
 }
 .text-embossed {
   text-shadow:
-    0 -1px 0 rgba(255, 255, 255, 0.35),
-    0 1px 1px rgba(0, 0, 0, 0.45);
+    0 -1px 0 var(--engrave-hi),
+    0 1px 1px var(--engrave-lo);
 }

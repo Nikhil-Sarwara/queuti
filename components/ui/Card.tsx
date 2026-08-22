@@ -46,7 +46,7 @@ export function Card({
       {framed && (
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-1.5 rounded-[0.55rem] border border-brass/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)]"
+          className="pointer-events-none absolute inset-1.5 rounded-[0.55rem] border border-brass/40 shadow-[inset_0_1px_1px_var(--sh-hi)]"
         />
       )}
       <div className="relative">{children}</div>
