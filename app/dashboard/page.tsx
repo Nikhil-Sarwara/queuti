@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { verifySession } from "@/lib/auth";
 import { KanbanBoard } from "@/components/KanbanBoard";
+import { UpcomingInterviews } from "@/components/UpcomingInterviews";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import { OverviewStats } from "@/components/OverviewStats";
 import { CompaniesPanel } from "@/components/CompaniesPanel";
@@ -41,6 +42,8 @@ export default async function DashboardPage() {
       <OverviewStats />
 
       <KanbanBoard />
+
+      <UpcomingInterviews />
 
       <AnalyticsDashboard />
 
