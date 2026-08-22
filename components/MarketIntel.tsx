@@ -6,6 +6,8 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -29,6 +31,20 @@ interface MarketData {
   bySource: LabelCount[];
   byRole: LabelCount[];
   responseDaysBySource: ResponseDays[];
+  salaryByRole: {
+    label: string;
+    avg: number;
+    min: number;
+    max: number;
+    n: number;
+  }[];
+  trend: { label: string; count: number }[];
+  offerRateBySource: {
+    label: string;
+    rate: number;
+    offers: number;
+    total: number;
+  }[];
 }
 
 /**
@@ -98,7 +114,10 @@ export function MarketIntel() {
     data.byCompany.length === 0 &&
     data.bySource.length === 0 &&
     data.byRole.length === 0 &&
-    data.responseDaysBySource.length === 0;
+    data.responseDaysBySource.length === 0 &&
+    data.salaryByRole.length === 0 &&
+    data.trend.length === 0 &&
+    data.offerRateBySource.length === 0;
 
   if (empty) {
     return (
@@ -110,6 +129,9 @@ export function MarketIntel() {
       </Card>
     );
   }
+
+  const fmtMoney = (v: number) =>
+    v >= 1000 ? `$${Math.round(v / 1000)}k` : `$${Math.round(v)}`;
 
   return (
     <div className="mt-3 grid gap-3 lg:grid-cols-2">
@@ -207,6 +229,84 @@ export function MarketIntel() {
           </ResponsiveContainer>
         </div>
       </Card>
+
+      {/* salary by role (#33) */}
+      {data.salaryByRole.length > 0 && (
+        <Card material="paper" framed className="shadow-bevel">
+          <h3 className="font-display text-sm font-bold text-engraved">💰 Avg salary by role</h3>
+          <div className="mt-3 h-[260px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data.salaryByRole} layout="vertical" margin={{ top: 4, right: 24, left: 8, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} horizontal={false} />
+                <XAxis type="number" tick={chart.tick} tickFormatter={(v: number) => fmtMoney(v)} />
+                <YAxis type="category" dataKey="label" tick={chart.tick} width={130} />
+                <Tooltip
+                  cursor={{ fill: chart.cursor }}
+                  contentStyle={{ background: chart.tipBg, border: `1px solid ${chart.tipBorder}`, borderRadius: 8, fontSize: 12 }}
+                  formatter={(value) => [fmtMoney(Number(value)), "avg"]}
+                  labelFormatter={(label) => `${label} (${data.salaryByRole.find((s) => s.label === label)?.n ?? 0} roles)`}
+                />
+                <Bar dataKey="avg" fill={chart.colors[0]} radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] opacity-75">
+            {data.salaryByRole.slice(0, 4).map((s) => (
+              <li key={s.label}>
+                <span className="font-bold text-ink">{s.label}</span>: {fmtMoney(s.min)}–{fmtMoney(s.max)}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {/* applications over time (#33) */}
+      {data.trend.length > 0 && (
+        <Card material="paper" framed className="shadow-bevel">
+          <h3 className="font-display text-sm font-bold text-engraved">📈 Applications — last 12 weeks</h3>
+          <div className="mt-3 h-[260px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data.trend} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
+                <XAxis dataKey="label" tick={chart.tick} interval={1} />
+                <YAxis tick={chart.tick} allowDecimals={false} />
+                <Tooltip
+                  cursor={{ stroke: chart.tipBorder }}
+                  contentStyle={{ background: chart.tipBg, border: `1px solid ${chart.tipBorder}`, borderRadius: 8, fontSize: 12 }}
+                  formatter={(value) => [`${value}`, "applications"]}
+                />
+                <Line type="monotone" dataKey="count" stroke={chart.colors[0]} strokeWidth={2.5} dot={{ r: 3, fill: chart.colors[0] }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      )}
+
+      {/* offer rate by source (#33) */}
+      {data.offerRateBySource.length > 0 && (
+        <Card material="paper" framed className="shadow-bevel">
+          <h3 className="font-display text-sm font-bold text-engraved">🏆 Offer rate by source</h3>
+          <div className="mt-3 h-[260px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data.offerRateBySource} margin={{ top: 4, right: 8, left: -14, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
+                <XAxis dataKey="label" tick={chart.tick} interval={0} angle={-28} textAnchor="end" height={64} />
+                <YAxis tick={chart.tick} unit="%" />
+                <Tooltip
+                  cursor={{ fill: chart.cursor }}
+                  contentStyle={{ background: chart.tipBg, border: `1px solid ${chart.tipBorder}`, borderRadius: 8, fontSize: 12 }}
+                  formatter={(value) => [`${value}%`, "offer rate"]}
+                  labelFormatter={(label) => {
+                    const s = data.offerRateBySource.find((o) => o.label === label);
+                    return s ? `${label} · ${s.offers}/${s.total} offers` : label;
+                  }}
+                />
+                <Bar dataKey="rate" fill={chart.colors[3]} radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
