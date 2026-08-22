@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Badge, Button, Card, TextField } from "@/components/ui";
+import { ApplicationsTable } from "@/components/ApplicationsTable";
 
 export type AppStatus =
   | "applied"
@@ -78,6 +79,7 @@ function fmtDate(iso: string) {
 
 export function KanbanBoard() {
   const [apps, setApps] = useState<KanbanApp[]>([]);
+  const [view, setView] = useState<"board" | "table">("board");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [form, setForm] = useState(EMPTY_FORM);
@@ -278,7 +280,44 @@ export function KanbanBoard() {
           <p className="text-sm opacity-70">Loading your applications…</p>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <>
+          {/* board / ledger toggle */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="inline-flex rounded-md border border-ink/25 bg-gradient-to-b from-wood-light/70 to-wood/70 p-1 shadow-engraved">
+              <button
+                type="button"
+                onClick={() => setView("board")}
+                className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
+                  view === "board"
+                    ? "border border-b-2 border-brass-dark bg-gradient-to-b from-brass-light to-brass text-ink shadow-bevel-sm"
+                    : "text-ink-soft hover:text-ink"
+                }`}
+              >
+                🎴 Board
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("table")}
+                className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
+                  view === "table"
+                    ? "border border-b-2 border-brass-dark bg-gradient-to-b from-brass-light to-brass text-ink shadow-bevel-sm"
+                    : "text-ink-soft hover:text-ink"
+                }`}
+              >
+                📋 Ledger
+              </button>
+            </div>
+            <p className="hidden text-xs uppercase tracking-wider opacity-50 sm:block">
+              {view === "board"
+                ? "← → to move applications between stages"
+                : "search · filter · sort your applications"}
+            </p>
+          </div>
+
+          {view === "table" ? (
+            <ApplicationsTable apps={apps} />
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {STATUSES.map((s) => (
             <div key={s} className="flex flex-col gap-2">
               <div className={`rounded-md border border-ink/20 bg-gradient-to-b px-3 py-1.5 text-center text-xs font-bold uppercase tracking-widest shadow-bevel-sm ${COLUMN_META[s].cls}`}>
@@ -358,7 +397,9 @@ export function KanbanBoard() {
               </div>
             </div>
           ))}
-        </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
