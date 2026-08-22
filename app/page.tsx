@@ -1,4 +1,5 @@
 import { Badge, Button, Card, TextField } from "@/components/ui";
+import { OverviewStats } from "@/components/OverviewStats";
 
 export default function Home() {
   return (
@@ -12,6 +13,9 @@ export default function Home() {
           Track every application. Learn from real data. Know the market.
         </p>
       </header>
+
+      {/* live overview — shows counters when signed in, sign-in prompt otherwise */}
+      <OverviewStats />
 
       {/* buttons */}
       <section>

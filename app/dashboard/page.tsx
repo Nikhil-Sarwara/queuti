@@ -4,6 +4,7 @@ import Link from "next/link";
 import { verifySession } from "@/lib/auth";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
+import { OverviewStats } from "@/components/OverviewStats";
 import { MlPanel } from "@/components/MlPanel";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +36,8 @@ export default async function DashboardPage() {
           </button>
         </form>
       </header>
+
+      <OverviewStats />
 
       <KanbanBoard />
 
