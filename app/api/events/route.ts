@@ -42,7 +42,7 @@ export async function GET(req: Request) {
         },
       },
       { $unwind: { path: "$app", preserveNullAndEmptyArrays: false } },
-      { $match: { "app.userId": userId } },
+      { $match: { "app.userId": userId, "app.archivedAt": null } },
     ])
     .toArray();
 

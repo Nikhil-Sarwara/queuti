@@ -27,6 +27,7 @@ export interface KanbanApp {
   salary: string;
   notes: string;
   jd: string;
+  archivedAt: string | null;
   updatedAt: string;
 }
 
@@ -84,7 +85,11 @@ function fmtDate(iso: string) {
 
 export function KanbanBoard() {
   const [apps, setApps] = useState<KanbanApp[]>([]);
-  const [view, setView] = useState<"board" | "table">("board");
+  const [view, setView] = useState<"board" | "table" | "archived">("board");
+  // archived drawer (#26)
+  const [archivedApps, setArchivedApps] = useState<KanbanApp[]>([]);
+  const [archivedLoading, setArchivedLoading] = useState(false);
+  const [restoringId, setRestoringId] = useState("");
   // board filters (#20)
   const [hiddenStatuses, setHiddenStatuses] = useState<Set<AppStatus>>(new Set());
   const [companyQ, setCompanyQ] = useState("");
@@ -100,6 +105,7 @@ export function KanbanBoard() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState("");
   const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [importDupes, setImportDupes] = useState<string[]>([]);
   const [dragging, setDragging] = useState(false);
 
   const load = useCallback(async () => {
@@ -117,6 +123,25 @@ export function KanbanBoard() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const loadArchived = useCallback(async () => {
+    setArchivedLoading(true);
+    try {
+      const data = await api<{ applications: KanbanApp[] }>(
+        "/api/applications?archived=1"
+      );
+      setArchivedApps(data.applications);
+      setError("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load archived applications");
+    } finally {
+      setArchivedLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (view === "archived") loadArchived();
+  }, [view, loadArchived]);
 
   const set = (k: keyof typeof EMPTY_FORM) => (v: string) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -164,16 +189,34 @@ export function KanbanBoard() {
     }
   }
 
-  async function remove(app: KanbanApp) {
-    if (!confirm(`Delete "${app.title}"${app.companyName ? ` at ${app.companyName}` : ""}?`)) return;
+  async function restore(app: KanbanApp) {
+    setRestoringId(app._id);
+    setError("");
+    try {
+      await api(`/api/applications/${app._id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ archived: false }),
+      });
+      setArchivedApps((prev) => prev.filter((a) => a._id !== app._id));
+      toast(`♻️ Restored ${app.title}`, "success");
+      load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to restore");
+    } finally {
+      setRestoringId("");
+    }
+  }
+
+  async function archive(app: KanbanApp) {
+    if (!confirm(`Archive "${app.title}"${app.companyName ? ` at ${app.companyName}` : ""}?`)) return;
     setBusyId(app._id);
     setError("");
     try {
       await api(`/api/applications/${app._id}`, { method: "DELETE" });
       setApps((prev) => prev.filter((a) => a._id !== app._id));
-      toast(`🗑️ Deleted ${app.title}`, "success");
+      toast(`🗃️ Archived ${app.title}`, "success");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete");
+      setError(err instanceof Error ? err.message : "Failed to archive");
     } finally {
       setBusyId("");
     }
@@ -184,6 +227,7 @@ export function KanbanBoard() {
     setImporting(true);
     setImportResult("");
     setImportErrors([]);
+    setImportDupes([]);
     setError("");
     try {
       const res = await fetch("/api/applications/import", {
@@ -194,9 +238,10 @@ export function KanbanBoard() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || `Import failed (${res.status})`);
       setImportResult(
-        `✅ Imported ${data.imported}, skipped ${data.skipped} duplicate${data.invalid ? ", " + data.invalid + " invalid" : ""}.`
+        `✅ Imported ${data.imported}, skipped ${data.skipped} exact duplicate${data.duplicates ? ", flagged " + data.duplicates + " duplicate" + (data.duplicates === 1 ? "" : "s") : ""}${data.invalid ? ", " + data.invalid + " invalid" : ""}.`
       );
       setImportErrors(data.errors || []);
+      setImportDupes(data.duplicateMessages || []);
       toast(`📥 Imported ${data.imported} application${data.imported === 1 ? "" : "s"} from CSV`, "success");
       load();
     } catch (e) {
@@ -370,7 +415,7 @@ export function KanbanBoard() {
                   className="sr-only"
                 />
               </label>
-              <p className="text-[11px] opacity-60">or click to choose a file (date,title,company,apply_url,hiring_email) — imports run automatically, duplicates are skipped</p>
+              <p className="text-[11px] opacity-60">or click to choose a file (date,title,company,apply_url,hiring_email) — imports run automatically, exact duplicates are skipped, company+title duplicates are flagged</p>
             </div>
 
             <textarea
@@ -390,6 +435,13 @@ export function KanbanBoard() {
               <ul className="max-h-40 overflow-y-auto rounded-md border border-blood/40 bg-blood/10 p-2.5 text-xs text-blood-dark">
                 {importErrors.map((msg, i) => (
                   <li key={i} className="font-mono">⚠️ {msg}</li>
+                ))}
+              </ul>
+            )}
+            {importDupes.length > 0 && (
+              <ul className="max-h-40 overflow-y-auto rounded-md border border-brass/50 bg-brass/10 p-2.5 text-xs text-brass-dark">
+                {importDupes.map((msg, i) => (
+                  <li key={i} className="font-mono">🔁 {msg}</li>
                 ))}
               </ul>
             )}
@@ -421,7 +473,7 @@ export function KanbanBoard() {
         </Card>
       ) : (
         <>
-          {/* board / ledger toggle */}
+          {/* board / ledger / archive toggle */}
           <div className="flex items-center justify-between gap-3">
             <div className="inline-flex rounded-md border border-ink/25 bg-gradient-to-b from-wood-light/70 to-wood/70 p-1 shadow-engraved">
               <button
@@ -446,16 +498,87 @@ export function KanbanBoard() {
               >
                 📋 Ledger
               </button>
+              <button
+                type="button"
+                onClick={() => setView("archived")}
+                className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
+                  view === "archived"
+                    ? "border border-b-2 border-brass-dark bg-gradient-to-b from-brass-light to-brass text-ink shadow-bevel-sm"
+                    : "text-ink-soft hover:text-ink"
+                }`}
+              >
+                🗃️ Archived
+              </button>
             </div>
             <p className="hidden text-xs uppercase tracking-wider opacity-50 sm:block">
               {view === "board"
                 ? "← → to move applications between stages"
-                : "search · filter · sort your applications"}
+                : view === "archived"
+                  ? "restore or revisit archived applications"
+                  : "search · filter · bulk edit · sort"}
             </p>
           </div>
 
-          {view === "table" ? (
-            <ApplicationsTable apps={apps} />
+          {view === "archived" ? (
+            <Card material="paper" framed className="shadow-bevel-sm">
+              <h3 className="font-display text-base font-bold text-engraved">
+                🗃️ Archived applications
+              </h3>
+              <p className="mt-1 text-xs opacity-60">
+                Archived rows are hidden from the board, ledger and analytics — restore them any time.
+              </p>
+              {archivedLoading ? (
+                <div className="mt-3 flex flex-col gap-2">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="h-14 animate-pulse rounded-md border border-ink/10 bg-paper-dark/50 shadow-engraved" />
+                  ))}
+                </div>
+              ) : archivedApps.length === 0 ? (
+                <p className="mt-3 rounded-md border border-ink/15 bg-paper-dark/30 p-4 text-center text-sm italic opacity-60">
+                  Nothing archived yet — use the ✕ on a board card to file it away.
+                </p>
+              ) : (
+                <ul className="mt-3 flex flex-col gap-2">
+                  {archivedApps.map((a) => (
+                    <li
+                      key={a._id}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-ink/15 bg-paper-dark/40 p-2.5 shadow-engraved"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-ink">
+                          <Link
+                            href={`/applications/${a._id}`}
+                            className="underline-offset-2 hover:text-brass-dark hover:underline"
+                          >
+                            {a.title}
+                          </Link>
+                          {a.companyName && (
+                            <span className="ml-1.5 font-semibold text-ink-soft">at {a.companyName}</span>
+                          )}
+                        </p>
+                        <p className="mt-0.5 text-[11px] opacity-60">
+                          🗓 {fmtDate(a.dateApplied)}
+                          {a.archivedAt && <> · 🗃️ archived {fmtDate(a.archivedAt)}</>}
+                          {a.source && <> · <span className="uppercase">{a.source}</span></>}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="brass"
+                        size="sm"
+                        disabled={restoringId === a._id}
+                        onClick={() => restore(a)}
+                        title="Restore to active tracker"
+                      >
+                        ♻️ Restore
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+          ) : view === "table" ? (
+            <ApplicationsTable apps={apps} onRefresh={load} />
           ) : (
             <>
               {/* board filter bar (#20) */}
@@ -612,12 +735,12 @@ export function KanbanBoard() {
                       </div>
                       <Button
                         size="sm"
-                        variant="danger"
+                        variant="paper"
                         disabled={busyId === app._id}
-                        onClick={() => remove(app)}
-                        title="Delete"
+                        onClick={() => archive(app)}
+                        title="Archive (soft delete — restore later)"
                       >
-                        ✕
+                        🗃️
                       </Button>
                     </div>
                   </Card>

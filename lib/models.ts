@@ -34,6 +34,10 @@ export interface Application {
   notes?: string;
   /** Pasted job description — input to the browser role-fit scorer (#17). */
   jd?: string;
+  /** Set when the user archives the application (soft delete, #26). Archived
+   *  apps hide from the board/ledger/analytics but can be restored. Null when
+   *  restored. */
+  archivedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

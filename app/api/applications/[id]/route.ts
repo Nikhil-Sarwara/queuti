@@ -164,6 +164,10 @@ export async function PATCH(
     }
     $set.dateApplied = d;
   }
+  // Restore from the archive (#26): PATCH { archived: false }.
+  if (body.archived === false) {
+    $set.archivedAt = null;
+  }
   $set.updatedAt = new Date();
 
   const res = await col.findOneAndUpdate(
@@ -176,7 +180,8 @@ export async function PATCH(
   return NextResponse.json({ application: res ? serialize(res) : null });
 }
 
-/** DELETE /api/applications/[id] — remove an application. */
+/** DELETE /api/applications/[id] — archive (soft delete, #26). The row stays
+ *  in the database with archivedAt set; the archive view can restore it. */
 export async function DELETE(
   req: Request,
   { params }: { params: { id: string } }
@@ -193,12 +198,17 @@ export async function DELETE(
   }
 
   const col = await applications();
-  const res = await col.deleteOne({ _id: id, userId: new ObjectId(session.userId) });
-  if (res.deletedCount === 0) {
+  const now = new Date();
+  const res = await col.findOneAndUpdate(
+    { _id: id, userId: new ObjectId(session.userId) },
+    { $set: { archivedAt: now, updatedAt: now } },
+    { returnDocument: "after" }
+  );
+  if (!res) {
     return NextResponse.json({ error: "Application not found" }, { status: 404 });
   }
   await cacheDel(`analytics:${session.userId}`).catch(() => {});
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, archived: true });
 }
 
 function serialize(app: Application) {
@@ -214,6 +224,7 @@ function serialize(app: Application) {
     salary: app.salary || "",
     notes: app.notes || "",
     jd: app.jd || "",
+    archivedAt: app.archivedAt ? app.archivedAt.toISOString() : null,
     createdAt: app.createdAt.toISOString(),
     updatedAt: app.updatedAt.toISOString(),
   };

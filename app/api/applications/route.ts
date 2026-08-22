@@ -34,6 +34,7 @@ function serialize(app: Application) {
     salary: app.salary || "",
     notes: app.notes || "",
     jd: app.jd || "",
+    archivedAt: app.archivedAt ? app.archivedAt.toISOString() : null,
     createdAt: app.createdAt.toISOString(),
     updatedAt: app.updatedAt.toISOString(),
   };
@@ -80,7 +81,8 @@ function parseBody(body: Record<string, unknown>) {
   return fields;
 }
 
-/** GET /api/applications — paginated, sortable list of the user's applications. */
+/** GET /api/applications — paginated, sortable list of the user's applications.
+ *  Archived apps are hidden by default; pass ?archived=1 for the archive view (#26). */
 export async function GET(req: Request) {
   const auth = await requireSession(req);
   if ("error" in auth) return auth.error;
@@ -96,8 +98,16 @@ export async function GET(req: Request) {
   }
   const { page, limit, sort, order } = pageInfo;
 
+  const url = new URL(req.url);
+  const archived = url.searchParams.get("archived") === "1";
+
   const col = await applications();
-  const filter = { userId: new ObjectId(session.userId) };
+  const filter = {
+    userId: new ObjectId(session.userId),
+    ...(archived
+      ? { archivedAt: { $ne: null } }
+      : { archivedAt: null }),
+  };
   const [total, docs] = await Promise.all([
     col.countDocuments(filter),
     col

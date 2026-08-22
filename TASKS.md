@@ -36,7 +36,7 @@ Order matters. Agents pick the first task with status `todo`.
 | 23 | Docs upgrade | done | README, .env.example, CONTRIBUTING, TASKS |
 | 24 | Auth hardening | done | bc22792 — reset flow, sliding sessions, /account, CSRF-safe cookies |
 | 25 | API hardening | done | 6d2848b — pagination/sort, validation, rate limits, security headers |
-| 26 | Data quality UX | todo | in issue queue |
+| 26 | Data quality UX | done | dup detection on import, archive/restore, bulk status |
 
 ## Queue protocol
 

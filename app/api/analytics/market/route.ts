@@ -41,7 +41,7 @@ export async function GET(req: Request) {
   const [byCompany, bySource, byRole, respAgg] = await Promise.all([
     col
       .aggregate<{ _id: string; count: number }>([
-        { $match: { userId, companyName: { $ne: "" } } },
+        { $match: { userId, archivedAt: null, companyName: { $ne: "" } } },
         { $group: { _id: "$companyName", count: { $sum: 1 } } },
         { $sort: { count: -1 } },
         { $limit: 12 },
@@ -49,14 +49,14 @@ export async function GET(req: Request) {
       .toArray(),
     col
       .aggregate<{ _id: string; count: number }>([
-        { $match: { userId, source: { $ne: "" } } },
+        { $match: { userId, archivedAt: null, source: { $ne: "" } } },
         { $group: { _id: "$source", count: { $sum: 1 } } },
         { $sort: { count: -1 } },
       ])
       .toArray(),
     col
       .aggregate<{ _id: string; count: number }>([
-        { $match: { userId } },
+        { $match: { userId, archivedAt: null } },
         { $group: { _id: "$title", count: { $sum: 1 } } },
         { $sort: { count: -1 } },
         { $limit: 12 },
@@ -67,6 +67,7 @@ export async function GET(req: Request) {
         {
           $match: {
             userId,
+            archivedAt: null,
             respondedAt: { $exists: true, $ne: null },
             dateApplied: { $exists: true, $ne: null },
           },

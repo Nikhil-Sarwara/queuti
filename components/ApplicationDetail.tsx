@@ -260,13 +260,14 @@ export function ApplicationDetail({ id }: { id: string; sessionEmail: string }) 
   async function removeApp() {
     const current = app;
     if (!current) return;
-    if (!confirm(`Delete application "${current.title}"${current.companyName ? ` at ${current.companyName}` : ""}?`)) return;
+    if (!confirm(`Archive "${current.title}"${current.companyName ? ` at ${current.companyName}` : ""}? You can restore it later from the 🗃️ Archived view.`)) return;
     setDeleting(true);
     try {
       await api(`/api/applications/${id}`, { method: "DELETE" });
+      toast("🗃️ Application archived", "success");
       router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete");
+      setError(err instanceof Error ? err.message : "Failed to archive");
       setDeleting(false);
     }
   }
@@ -316,7 +317,7 @@ export function ApplicationDetail({ id }: { id: string; sessionEmail: string }) 
               {statusIdx + 1}/{STATUSES.length}
             </span>
             <Button size="sm" variant="paper" disabled={statusIdx === STATUSES.length - 1 || busyStatus} onClick={() => move(1)} title="Move later stage">→</Button>
-            <Button size="sm" variant="danger" disabled={deleting} onClick={removeApp} title="Delete application">✕</Button>
+            <Button size="sm" variant="danger" disabled={deleting} onClick={removeApp} title="Archive application (soft delete — restore from archived view)">🗃️</Button>
           </div>
         </div>
       </Card>

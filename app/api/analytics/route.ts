@@ -30,7 +30,7 @@ async function computeAnalytics(userId: ObjectId): Promise<AnalyticsPayload> {
   const [funnel, avgAgg, sources, totals] = await Promise.all([
     col
       .aggregate<{ _id: ApplicationStatus; count: number }>([
-        { $match: { userId } },
+        { $match: { userId, archivedAt: null } },
         { $group: { _id: "$status", count: { $sum: 1 } } },
       ])
       .toArray(),
@@ -39,6 +39,7 @@ async function computeAnalytics(userId: ObjectId): Promise<AnalyticsPayload> {
         {
           $match: {
             userId,
+            archivedAt: null,
             respondedAt: { $exists: true, $ne: null },
             dateApplied: { $exists: true, $ne: null },
           },
@@ -64,7 +65,7 @@ async function computeAnalytics(userId: ObjectId): Promise<AnalyticsPayload> {
       .toArray(),
     col
       .aggregate<{ _id: string; count: number }>([
-        { $match: { userId, source: { $ne: "" } } },
+        { $match: { userId, archivedAt: null, source: { $ne: "" } } },
         { $group: { _id: "$source", count: { $sum: 1 } } },
         { $sort: { count: -1 } },
       ])
@@ -72,7 +73,7 @@ async function computeAnalytics(userId: ObjectId): Promise<AnalyticsPayload> {
     col
       .aggregate<{ _id: null; total: number; responded: number; offers: number; ghosted: number }>([
         {
-          $match: { userId },
+          $match: { userId, archivedAt: null },
         },
         {
           $group: {

@@ -13,7 +13,8 @@ export const dynamic = "force-dynamic";
  * Body: { csv: string } — jobhunt-applications.csv format:
  *   date,title,company,apply_url,hiring_email
  * Idempotent: skips rows that already exist for this user
- * (same title + company + date). Returns counts.
+ * (same title + company + date). Flags company+title duplicates (#26).
+ * Returns counts.
  */
 export async function POST(req: Request) {
   const auth = await requireSession(req);
@@ -55,8 +56,28 @@ export async function POST(req: Request) {
   let imported = 0;
   let skipped = 0;
   let invalid = 0;
+  let duplicates = 0;
   const errors: string[] = [];
+  const duplicateMessages: string[] = [];
   const now = new Date();
+
+  // Duplicate detection (#26): a row is a duplicate if the user already has
+  // an application with the same company + title (case-insensitive), or the
+  // same row appears twice in this file. Exact title+company+date matches
+  // stay counted as plain skips for idempotent re-imports of the same file.
+  const existing = await col
+    .find(
+      { userId },
+      { projection: { title: 1, companyName: 1 } }
+    )
+    .toArray();
+  const existingKeys = new Set(
+    existing.map(
+      (a) =>
+        `${a.title.trim().toLowerCase()}|${(a.companyName || "").trim().toLowerCase()}`
+    )
+  );
+  const fileKeys = new Set<string>();
 
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
@@ -86,6 +107,19 @@ export async function POST(req: Request) {
       continue;
     }
 
+    // Duplicate detection: same company + title already tracked (or twice
+    // in this file) — flag it instead of silently importing.
+    const key = `${title.trim().toLowerCase()}|${companyName.trim().toLowerCase()}`;
+    if (fileKeys.has(key) || existingKeys.has(key)) {
+      duplicates++;
+      if (duplicateMessages.length < 10) {
+        duplicateMessages.push(
+          `row ${i + 2}: duplicate of "${title}" at "${companyName || "(no company)"}"`
+        );
+      }
+      continue;
+    }
+
     const doc: Application = {
       userId,
       title,
@@ -102,6 +136,7 @@ export async function POST(req: Request) {
     };
     try {
       await col.insertOne(doc);
+      fileKeys.add(key);
       imported++;
     } catch (e) {
       invalid++;
@@ -115,7 +150,9 @@ export async function POST(req: Request) {
   return NextResponse.json({
     imported,
     skipped,
+    duplicates,
     invalid,
     errors: errors.slice(0, 10),
+    duplicateMessages,
   });
 }

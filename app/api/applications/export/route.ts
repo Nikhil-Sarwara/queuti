@@ -22,8 +22,9 @@ export async function GET(req: Request) {
   const { session } = auth;
 
   const col = await applications();
+  // Active applications only — archived ones are out of the active tracker (#26).
   const docs = await col
-    .find({ userId: new ObjectId(session.userId) })
+    .find({ userId: new ObjectId(session.userId), archivedAt: null })
     .sort({ dateApplied: 1 })
     .toArray();
 
