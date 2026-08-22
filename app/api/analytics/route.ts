@@ -3,6 +3,7 @@ import { ObjectId } from "mongodb";
 import { applications } from "@/lib/models";
 import { requireSession } from "@/lib/auth";
 import { cacheGet, cacheSet } from "@/lib/redis";
+import { followUpDays } from "@/lib/followup";
 import type { ApplicationStatus } from "@/lib/models";
 
 export const dynamic = "force-dynamic";
@@ -25,12 +26,20 @@ interface AnalyticsPayload {
   respondedCount: number;
   sources: { source: string; count: number }[];
   totals: { total: number; responded: number; offers: number; ghosted: number };
+  followUps: {
+    _id: string;
+    title: string;
+    companyName: string;
+    status: ApplicationStatus;
+    dateApplied: string;
+    days: number;
+  }[];
 }
 
 /** Compute per-user analytics from Mongo. */
 async function computeAnalytics(userId: ObjectId): Promise<AnalyticsPayload> {
   const col = await applications();
-  const [funnel, avgAgg, sources, totals] = await Promise.all([
+  const [funnel, avgAgg, sources, totals, stale] = await Promise.all([
     col
       .aggregate<{ _id: ApplicationStatus; count: number }>([
         { $match: { userId, archivedAt: null } },
@@ -91,6 +100,23 @@ async function computeAnalytics(userId: ObjectId): Promise<AnalyticsPayload> {
         },
       ])
       .toArray(),
+    // Follow-up candidates: only statuses that can go stale, filtered in JS
+    // by the shared staleness rules (#30).
+    col
+      .find(
+        { userId, archivedAt: null, status: { $in: ["applied", "screening", "ghosted"] } },
+        {
+          projection: {
+            title: 1,
+            companyName: 1,
+            status: 1,
+            dateApplied: 1,
+            respondedAt: 1,
+            updatedAt: 1,
+          },
+        }
+      )
+      .toArray(),
   ]);
 
   const funnelMap = Object.fromEntries(funnel.map((f) => [f._id, f.count]));
@@ -100,6 +126,20 @@ async function computeAnalytics(userId: ObjectId): Promise<AnalyticsPayload> {
   }));
   const avg = avgAgg[0];
   const tot = totals[0];
+  const now = Date.now();
+
+  const followUps = stale
+    .map((a) => ({
+      _id: a._id!.toHexString(),
+      title: a.title,
+      companyName: a.companyName || "",
+      status: a.status,
+      dateApplied: a.dateApplied.toISOString(),
+      days: followUpDays(a, now)!,
+    }))
+    .filter((f) => f.days !== null)
+    .sort((x, y) => y.days - x.days)
+    .slice(0, 8);
 
   return {
     funnel: funnelOut,
@@ -112,6 +152,7 @@ async function computeAnalytics(userId: ObjectId): Promise<AnalyticsPayload> {
       offers: tot ? tot.offers : 0,
       ghosted: tot ? tot.ghosted : 0,
     },
+    followUps,
   };
 }
 

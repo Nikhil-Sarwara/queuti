@@ -6,7 +6,7 @@ import { Badge, Button, Card, TextField } from "@/components/ui";
 import { toast } from "@/lib/toast";
 import type { KanbanApp } from "@/components/KanbanBoard";
 
-type SortKey = "date-desc" | "date-asc" | "company";
+type SortKey = "date-desc" | "date-asc" | "company" | "followup";
 type Status = KanbanApp["status"];
 
 const STATUSES: Status[] = [
@@ -87,6 +87,11 @@ export function ApplicationsTable({
       sorted.sort((a, b) => b.dateApplied.localeCompare(a.dateApplied));
     } else if (sort === "date-asc") {
       sorted.sort((a, b) => a.dateApplied.localeCompare(b.dateApplied));
+    } else if (sort === "followup") {
+      sorted.sort((a, b) => {
+        if (a.needsFollowUp !== b.needsFollowUp) return a.needsFollowUp ? -1 : 1;
+        return a.dateApplied.localeCompare(b.dateApplied);
+      });
     } else {
       sorted.sort((a, b) =>
         a.companyName.toLowerCase().localeCompare(b.companyName.toLowerCase())
@@ -227,6 +232,7 @@ export function ApplicationsTable({
               <option value="date-desc">Date (newest first)</option>
               <option value="date-asc">Date (oldest first)</option>
               <option value="company">Company (A–Z)</option>
+              <option value="followup">⏰ Follow-ups first</option>
             </select>
           </div>
         </div>
@@ -329,6 +335,11 @@ export function ApplicationsTable({
                       <Badge tone={a.status} dot className="!px-2 !text-[10px]">
                         {a.status}
                       </Badge>
+                      {a.needsFollowUp && (
+                        <span className="mt-1 block text-[10px] font-bold uppercase tracking-wide text-blood-dark">
+                          ⏰ follow up
+                        </span>
+                      )}
                     </td>
                     <td className="px-3 py-2 text-xs uppercase tracking-wide opacity-70">
                       {a.source || <span className="opacity-40">—</span>}

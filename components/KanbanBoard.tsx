@@ -29,6 +29,7 @@ export interface KanbanApp {
   jd: string;
   archivedAt: string | null;
   updatedAt: string;
+  needsFollowUp: boolean;
 }
 
 const STATUSES: AppStatus[] = [
@@ -95,7 +96,7 @@ export function KanbanBoard() {
   const [companyQ, setCompanyQ] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [boardSort, setBoardSort] = useState<"date-desc" | "updated-desc" | "updated-asc">("date-desc");
+  const [boardSort, setBoardSort] = useState<"date-desc" | "updated-desc" | "updated-asc" | "followup">("date-desc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [form, setForm] = useState(EMPTY_FORM);
@@ -318,7 +319,13 @@ export function KanbanBoard() {
   const visibleSorted = [...visible];
   if (boardSort === "date-desc") visibleSorted.sort((a, b) => b.dateApplied.localeCompare(a.dateApplied));
   else if (boardSort === "updated-desc") visibleSorted.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  else visibleSorted.sort((a, b) => a.updatedAt.localeCompare(b.updatedAt));
+  else if (boardSort === "followup") {
+    visibleSorted.sort((a, b) => {
+      // Follow-ups first, most overdue on top, then by date applied.
+      if (a.needsFollowUp !== b.needsFollowUp) return a.needsFollowUp ? -1 : 1;
+      return a.dateApplied.localeCompare(b.dateApplied);
+    });
+  } else visibleSorted.sort((a, b) => a.updatedAt.localeCompare(b.updatedAt));
 
   const resetFilters = () => {
     setHiddenStatuses(new Set());
@@ -643,6 +650,7 @@ export function KanbanBoard() {
                       <option value="date-desc">Date applied (newest)</option>
                       <option value="updated-desc">Updated (newest)</option>
                       <option value="updated-asc">Updated (oldest)</option>
+                      <option value="followup">⏰ Follow-ups first</option>
                     </select>
                   </div>
                   <div className="flex items-center gap-2">
@@ -684,6 +692,11 @@ export function KanbanBoard() {
                       </Link>
                       <Badge tone={app.status} dot className="shrink-0 !px-1.5 !text-[10px]" />
                     </div>
+                    {app.needsFollowUp && (
+                      <p className="mt-1 inline-block rounded-full border border-blood-dark/50 bg-blood-light/40 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blood-dark">
+                        ⏰ Follow up
+                      </p>
+                    )}
                     {app.companyName && (
                       <p className="mt-0.5 text-xs font-semibold text-ink-soft">{app.companyName}</p>
                     )}

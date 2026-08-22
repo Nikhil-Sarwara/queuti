@@ -4,6 +4,7 @@ import { applications, ensureIndexes, events } from "@/lib/models";
 import { requireSession } from "@/lib/auth";
 import { cacheDel, cacheGet, cacheSet, userCacheVersion, bumpUserCache } from "@/lib/redis";
 import { cleanStr, isHttpUrl, strTooLong, parsePagination, companyNameOf } from "@/lib/validate";
+import { needsFollowUp } from "@/lib/followup";
 import type { Application, ApplicationEvent, ApplicationStatus } from "@/lib/models";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +49,7 @@ function serialize(app: Application) {
     notes: app.notes || "",
     jd: app.jd || "",
     archivedAt: app.archivedAt ? app.archivedAt.toISOString() : null,
+    needsFollowUp: needsFollowUp(app),
     createdAt: app.createdAt.toISOString(),
     updatedAt: app.updatedAt.toISOString(),
   };

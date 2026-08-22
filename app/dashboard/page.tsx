@@ -6,6 +6,7 @@ import { KanbanBoard } from "@/components/KanbanBoard";
 import { UpcomingInterviews } from "@/components/UpcomingInterviews";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import { OverviewStats } from "@/components/OverviewStats";
+import { FollowUpPanel } from "@/components/FollowUpPanel";
 import { CompaniesPanel } from "@/components/CompaniesPanel";
 import { MlPanel } from "@/components/MlPanel";
 
@@ -48,6 +49,8 @@ export default async function DashboardPage() {
       </header>
 
       <OverviewStats />
+
+      <FollowUpPanel />
 
       <KanbanBoard />
 
