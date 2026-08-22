@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import { users } from "@/lib/models";
-import { requireAuth } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import { ObjectId } from "mongodb";
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/auth/me — protected; returns the current user. */
+/**
+ * GET /api/auth/me — protected; returns the current user.
+ * Accepts the queuti_token httpOnly cookie (browser/Same-Origin fetches)
+ * or a Bearer token (API clients) — same policy as every other API route.
+ */
 export async function GET(req: Request) {
-  const auth = await requireAuth(req);
+  const auth = await requireSession(req);
   if ("error" in auth) return auth.error;
 
   const { session } = auth;

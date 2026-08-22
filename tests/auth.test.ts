@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { hashPassword, verifyPassword } from "@/lib/auth";
-import { needsSlidingRefresh } from "@/lib/auth";
+import { needsSlidingRefresh, requireSession, signSession } from "@/lib/auth";
 import {
   generateResetToken,
   hashResetToken,
@@ -68,5 +68,60 @@ describe("sliding session refresh", () => {
   it("handles missing claims defensively", () => {
     expect(needsSlidingRefresh(undefined, undefined)).toBe(false);
     expect(needsSlidingRefresh(100, undefined)).toBe(false);
+  });
+});
+
+describe("requireSession (cookie-first auth, Bearer fallback)", () => {
+  const payload = { userId: "64b000000000000000000000", email: "a@b.com" };
+  const mkReq = (headers: Record<string, string>) =>
+    new Request("http://localhost/api/auth/me", { headers });
+
+  it("authenticates via the queuti_token httpOnly cookie", async () => {
+    const token = await signSession(payload);
+    const res = await requireSession(
+      mkReq({ cookie: `queuti_token=${token}; other=1` })
+    );
+    expect("session" in res).toBe(true);
+    if ("session" in res) {
+      expect(res.session).toEqual(payload);
+    }
+  });
+
+  it("still accepts a Bearer token (API clients)", async () => {
+    const token = await signSession(payload);
+    const res = await requireSession(
+      mkReq({ authorization: `Bearer ${token}` })
+    );
+    expect("session" in res).toBe(true);
+    if ("session" in res) {
+      expect(res.session).toEqual(payload);
+    }
+  });
+
+  it("cookie wins over a (stale) Bearer header", async () => {
+    const cookieToken = await signSession(payload);
+    const stale = await signSession({ userId: "x", email: "stale@x.com" });
+    const res = await requireSession(
+      mkReq({
+        cookie: `queuti_token=${cookieToken}`,
+        authorization: `Bearer ${stale}`,
+      })
+    );
+    expect("session" in res).toBe(true);
+    if ("session" in res) expect(res.session).toEqual(payload);
+  });
+
+  it("rejects requests with no token at all", async () => {
+    const res = await requireSession(mkReq({}));
+    expect("error" in res).toBe(true);
+    if ("error" in res) expect(res.error.status).toBe(401);
+  });
+
+  it("rejects a garbage cookie token", async () => {
+    const res = await requireSession(
+      mkReq({ cookie: "queuti_token=not-a-real-jwt" })
+    );
+    expect("error" in res).toBe(true);
+    if ("error" in res) expect(res.error.status).toBe(401);
   });
 });
