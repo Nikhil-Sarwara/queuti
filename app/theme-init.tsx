@@ -2,9 +2,11 @@
 // data-theme on <html> from localStorage (explicit choice) or the OS
 // prefers-color-scheme (first visit). Themes: paper (default), dark,
 // midnight.
+import { THEME_STORAGE_KEY } from "@/lib/theme";
+
 const THEME_INIT_SCRIPT = `(function(){
   try {
-    var t = localStorage.getItem("queuti-theme");
+    var t = localStorage.getItem("${THEME_STORAGE_KEY}");
     if (t !== "paper" && t !== "dark" && t !== "midnight") {
       t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "paper";
     }
