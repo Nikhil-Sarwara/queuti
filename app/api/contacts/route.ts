@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { contacts } from "@/lib/models";
 import { requireSession } from "@/lib/auth";
+import { cleanStr, isEmailLike, strTooLong, parsePagination } from "@/lib/validate";
 import type { Contact } from "@/lib/models";
 
 export const dynamic = "force-dynamic";
@@ -19,19 +20,38 @@ function serialize(c: Contact) {
   };
 }
 
-/** GET /api/contacts — the signed-in user's contacts, A–Z. */
+/** GET /api/contacts — paginated list of the user's contacts. */
 export async function GET(req: Request) {
   const auth = await requireSession(req);
   if ("error" in auth) return auth.error;
   const { session } = auth;
 
-  const col = await contacts();
-  const docs = await col
-    .find({ userId: new ObjectId(session.userId) })
-    .sort({ name: 1 })
-    .toArray();
+  const pageInfo = parsePagination(req.url, {
+    defaultSort: "name",
+    defaultOrder: "asc",
+    sortable: ["name", "createdAt", "updatedAt"],
+  });
+  if (!pageInfo.ok) {
+    return NextResponse.json({ error: pageInfo.error }, { status: 400 });
+  }
+  const { page, limit, sort, order } = pageInfo;
 
-  return NextResponse.json({ contacts: docs.map(serialize) });
+  const col = await contacts();
+  const filter = { userId: new ObjectId(session.userId) };
+  const [total, docs] = await Promise.all([
+    col.countDocuments(filter),
+    col
+      .find(filter)
+      .sort({ [sort]: order, _id: order })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .toArray(),
+  ]);
+
+  return NextResponse.json({
+    contacts: docs.map(serialize),
+    pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+  });
 }
 
 /** POST /api/contacts — create a contact (name required; optional companyId). */
@@ -47,11 +67,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const str = (v: unknown) =>
-    typeof v === "string" ? v.trim() : v == null ? "" : String(v);
+  const str = cleanStr;
   const name = str(body.name);
   if (!name) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
+  }
+  if (strTooLong(name, 200)) {
+    return NextResponse.json({ error: "Name must be ≤ 200 characters" }, { status: 400 });
+  }
+
+  const email = str(body.email);
+  if (email && !isEmailLike(email)) {
+    return NextResponse.json({ error: "email must be a valid email" }, { status: 400 });
+  }
+  const phone = str(body.phone);
+  const notes = str(body.notes);
+  if (strTooLong(email, 200) || strTooLong(phone, 50) || strTooLong(notes, 10000)) {
+    return NextResponse.json(
+      { error: "Field too long (email ≤ 200, phone ≤ 50, notes ≤ 10000)" },
+      { status: 400 }
+    );
   }
 
   let companyId: ObjectId | undefined;
@@ -69,10 +104,10 @@ export async function POST(req: Request) {
   const doc: Contact = {
     userId: new ObjectId(session.userId),
     name,
-    email: str(body.email),
-    phone: str(body.phone),
+    email,
+    phone,
     companyId,
-    notes: str(body.notes),
+    notes,
     createdAt: now,
     updatedAt: now,
   };

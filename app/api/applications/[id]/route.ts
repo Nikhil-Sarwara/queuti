@@ -3,6 +3,7 @@ import { ObjectId } from "mongodb";
 import { applications, events } from "@/lib/models";
 import { requireSession } from "@/lib/auth";
 import { cacheDel } from "@/lib/redis";
+import { cleanStr, isHttpUrl, strTooLong } from "@/lib/validate";
 import type { Application, ApplicationEvent, ApplicationStatus } from "@/lib/models";
 
 export const dynamic = "force-dynamic";
@@ -27,9 +28,19 @@ const EDITABLE_FIELDS = [
   "jd",
 ] as const;
 
-function str(v: unknown) {
-  return typeof v === "string" ? v.trim() : v == null ? "" : String(v);
-}
+// Display-name → max length map used to validate PATCH bodies.
+const FIELD_LIMITS: Record<(typeof EDITABLE_FIELDS)[number], number> = {
+  title: 200,
+  companyName: 200,
+  applyUrl: 500,
+  hiringEmail: 200,
+  source: 50,
+  salary: 100,
+  notes: 10000,
+  jd: 50000,
+};
+
+const str = cleanStr;
 
 /** GET /api/applications/[id] — fetch one application (detail page). */
 export async function GET(
@@ -86,7 +97,32 @@ export async function PATCH(
 
   const $set: Partial<Application> = {};
   for (const f of EDITABLE_FIELDS) {
-    if (body[f] !== undefined) $set[f] = str(body[f]);
+    if (body[f] !== undefined) {
+      const value = str(body[f]);
+      if (strTooLong(value, FIELD_LIMITS[f])) {
+        return NextResponse.json(
+          { error: `${f} must be ≤ ${FIELD_LIMITS[f]} characters` },
+          { status: 400 }
+        );
+      }
+      if (f === "applyUrl" && value && !isHttpUrl(value)) {
+        return NextResponse.json(
+          { error: "applyUrl must be a valid http(s) URL" },
+          { status: 400 }
+        );
+      }
+      if (
+        f === "hiringEmail" &&
+        value &&
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+      ) {
+        return NextResponse.json(
+          { error: "hiringEmail must be a valid email" },
+          { status: 400 }
+        );
+      }
+      $set[f] = value;
+    }
   }
   if (body.status !== undefined) {
     if (!STATUSES.includes(body.status as ApplicationStatus)) {

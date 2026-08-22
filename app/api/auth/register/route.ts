@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { users } from "@/lib/models";
 import { hashPassword, signSession, sessionCookieOptions } from "@/lib/auth";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
 /** POST /api/auth/register { email, password, name? } -> { token, user } */
 export async function POST(req: Request) {
+  const limit = await rateLimit(req, { bucket: "auth", limit: 10 });
+  if (!limit.ok) return rateLimitResponse(limit.retryAfterSec);
+
   let body: { email?: string; password?: string; name?: string };
   try {
     body = await req.json();

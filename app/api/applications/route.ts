@@ -3,6 +3,7 @@ import { ObjectId } from "mongodb";
 import { applications, ensureIndexes, events } from "@/lib/models";
 import { requireSession } from "@/lib/auth";
 import { cacheDel } from "@/lib/redis";
+import { cleanStr, isHttpUrl, strTooLong, parsePagination } from "@/lib/validate";
 import type { Application, ApplicationEvent, ApplicationStatus } from "@/lib/models";
 
 export const dynamic = "force-dynamic";
@@ -48,9 +49,8 @@ function parseBody(body: Record<string, unknown>) {
   if (Number.isNaN(dateApplied.getTime())) {
     throw new Error("Invalid dateApplied");
   }
-  const str = (v: unknown) =>
-    typeof v === "string" ? v.trim() : v == null ? "" : String(v);
-  return {
+  const str = cleanStr;
+  const fields = {
     title: str(body.title),
     companyName: str(body.companyName),
     applyUrl: str(body.applyUrl),
@@ -62,21 +62,61 @@ function parseBody(body: Record<string, unknown>) {
     status,
     dateApplied,
   };
+  if (!fields.title) throw new Error("Title is required");
+  if (strTooLong(fields.title, 200)) throw new Error("Title must be ≤ 200 characters");
+  if (strTooLong(fields.companyName, 200)) throw new Error("Company name must be ≤ 200 characters");
+  if (fields.applyUrl && !isHttpUrl(fields.applyUrl)) {
+    throw new Error("applyUrl must be a valid http(s) URL");
+  }
+  if (strTooLong(fields.applyUrl, 500)) throw new Error("applyUrl must be ≤ 500 characters");
+  if (fields.hiringEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.hiringEmail)) {
+    throw new Error("hiringEmail must be a valid email");
+  }
+  if (strTooLong(fields.hiringEmail, 200)) throw new Error("hiringEmail must be ≤ 200 characters");
+  if (strTooLong(fields.source, 50)) throw new Error("source must be ≤ 50 characters");
+  if (strTooLong(fields.salary, 100)) throw new Error("salary must be ≤ 100 characters");
+  if (strTooLong(fields.notes, 10000)) throw new Error("notes must be ≤ 10000 characters");
+  if (strTooLong(fields.jd, 50000)) throw new Error("jd must be ≤ 50000 characters");
+  return fields;
 }
 
-/** GET /api/applications — list the signed-in user's applications, newest first. */
+/** GET /api/applications — paginated, sortable list of the user's applications. */
 export async function GET(req: Request) {
   const auth = await requireSession(req);
   if ("error" in auth) return auth.error;
   const { session } = auth;
 
-  const col = await applications();
-  const docs = await col
-    .find({ userId: new ObjectId(session.userId) })
-    .sort({ dateApplied: -1 })
-    .toArray();
+  const pageInfo = parsePagination(req.url, {
+    defaultSort: "dateApplied",
+    defaultOrder: "desc",
+    sortable: ["dateApplied", "updatedAt", "title", "companyName", "status"],
+  });
+  if (!pageInfo.ok) {
+    return NextResponse.json({ error: pageInfo.error }, { status: 400 });
+  }
+  const { page, limit, sort, order } = pageInfo;
 
-  return NextResponse.json({ applications: docs.map(serialize) });
+  const col = await applications();
+  const filter = { userId: new ObjectId(session.userId) };
+  const [total, docs] = await Promise.all([
+    col.countDocuments(filter),
+    col
+      .find(filter)
+      .sort({ [sort]: order, _id: order })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .toArray(),
+  ]);
+
+  return NextResponse.json({
+    applications: docs.map(serialize),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    },
+  });
 }
 
 /** POST /api/applications — create a new application. */

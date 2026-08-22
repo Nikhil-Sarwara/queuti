@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { users } from "@/lib/models";
 import { hashPassword } from "@/lib/auth";
 import { resetTokenMatches } from "@/lib/reset";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,9 @@ export const dynamic = "force-dynamic";
  * the same 400 so a token cannot be probed.
  */
 export async function POST(req: Request) {
+  const limit = await rateLimit(req, { bucket: "auth", limit: 10 });
+  if (!limit.ok) return rateLimitResponse(limit.retryAfterSec);
+
   let body: { token?: string; password?: string };
   try {
     body = await req.json();

@@ -6,6 +6,7 @@
 
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
+import { rateLimit, rateLimitResponse } from "./rateLimit";
 
 const secret = () =>
   new TextEncoder().encode(process.env.AUTH_SECRET || "dev-insecure-secret");
@@ -98,11 +99,13 @@ export function needsSlidingRefresh(
 
 /**
  * Extract + verify session from a Request — accepts the queuti_token cookie
- * (same-origin fetches) or a Bearer token (API clients).
+ * (same-origin fetches) or a Bearer token (API clients). Rate-limited per IP.
  */
 export async function requireSession(
   req: Request
 ): Promise<{ session: SessionPayload } | { error: Response }> {
+  const limit = await rateLimit(req, { bucket: "api" });
+  if (!limit.ok) return { error: rateLimitResponse(limit.retryAfterSec) };
   const cookie = req.headers.get("cookie") || "";
   const match = cookie.match(/(?:^|;\s*)queuti_token=([^;]+)/);
   const token = match ? decodeURIComponent(match[1]) : null;
@@ -113,10 +116,16 @@ export async function requireSession(
   return requireAuth(req);
 }
 
-/** Extract + verify bearer token from a Request. */
+/**
+ * Extract + verify bearer token from a Request. Rate-limited per IP — note
+ * requireSession's cookie path already limited this request, and each request
+ * passes through exactly one of these branches.
+ */
 export async function requireAuth(
   req: Request
 ): Promise<{ session: SessionPayload } | { error: Response }> {
+  const limit = await rateLimit(req, { bucket: "api" });
+  if (!limit.ok) return { error: rateLimitResponse(limit.retryAfterSec) };
   const header = req.headers.get("authorization") || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
   if (!token) {

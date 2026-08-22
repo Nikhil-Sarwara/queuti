@@ -6,6 +6,7 @@ import {
   RESET_TOKEN_TTL_MS,
 } from "@/lib/reset";
 import { sendResetEmail } from "@/lib/mailer";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,9 @@ export const dynamic = "force-dynamic";
  * echoed back as `devResetLink` so the flow can be tested end-to-end locally.
  */
 export async function POST(req: Request) {
+  const limit = await rateLimit(req, { bucket: "auth", limit: 10 });
+  if (!limit.ok) return rateLimitResponse(limit.retryAfterSec);
+
   let body: { email?: string };
   try {
     body = await req.json();

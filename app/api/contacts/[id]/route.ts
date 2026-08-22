@@ -2,15 +2,21 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { contacts } from "@/lib/models";
 import { requireSession } from "@/lib/auth";
+import { cleanStr, isEmailLike, strTooLong } from "@/lib/validate";
 import type { Contact } from "@/lib/models";
 
 export const dynamic = "force-dynamic";
 
 const EDITABLE_FIELDS = ["name", "email", "phone", "notes"] as const;
 
-function str(v: unknown) {
-  return typeof v === "string" ? v.trim() : v == null ? "" : String(v);
-}
+const FIELD_LIMITS: Record<(typeof EDITABLE_FIELDS)[number], number> = {
+  name: 200,
+  email: 200,
+  phone: 50,
+  notes: 10000,
+};
+
+const str = cleanStr;
 
 function serialize(c: Contact) {
   return {
@@ -50,7 +56,22 @@ export async function PATCH(
 
   const $set: Partial<Contact> = {};
   for (const f of EDITABLE_FIELDS) {
-    if (body[f] !== undefined) $set[f] = str(body[f]);
+    if (body[f] !== undefined) {
+      const value = str(body[f]);
+      if (strTooLong(value, FIELD_LIMITS[f])) {
+        return NextResponse.json(
+          { error: `${f} must be ≤ ${FIELD_LIMITS[f]} characters` },
+          { status: 400 }
+        );
+      }
+      if (f === "email" && value && !isEmailLike(value)) {
+        return NextResponse.json(
+          { error: "email must be a valid email" },
+          { status: 400 }
+        );
+      }
+      $set[f] = value;
+    }
   }
   if ($set.name !== undefined && !$set.name) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
