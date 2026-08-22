@@ -35,7 +35,7 @@ Order matters. Agents pick the first task with status `todo`.
 | 22 | Professional page polish + PWA | done | 404, error boundary, icon, manifest, robots/sitemap |
 | 23 | Docs upgrade | done | README, .env.example, CONTRIBUTING, TASKS |
 | 24 | Auth hardening | done | bc22792 — reset flow, sliding sessions, /account, CSRF-safe cookies |
-| 25 | API hardening | todo | in issue queue |
+| 25 | API hardening | done | 6d2848b — pagination/sort, validation, rate limits, security headers |
 | 26 | Data quality UX | todo | in issue queue |
 
 ## Queue protocol
