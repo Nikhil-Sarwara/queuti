@@ -87,6 +87,18 @@ Register an account at `/login` → **Register**, then import your job hunt:
    — or just drag in your existing `jobhunt-applications.csv`
 3. Duplicates (same title + company + date) are skipped automatically
 
+### Demo data (screenshots / showcasing)
+
+```bash
+npm run seed
+```
+
+Seeds a realistic showcase dataset (36 applications across all six statuses,
+114 timeline events with interview-prep question banks, 10 companies, 20
+contacts) for the demo account **demo@queuti.com / demo1234**. Idempotent:
+it deletes only docs flagged `demo: true` before re-inserting, so your real
+data is never touched. Requires `MONGO_URI` (reads `.env.local`).
+
 ## Test & build
 
 ```bash
