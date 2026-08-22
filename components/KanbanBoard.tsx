@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Badge, Button, Card, TextField } from "@/components/ui";
 import { ApplicationsTable } from "@/components/ApplicationsTable";
 import { RoleFitScore } from "@/components/RoleFitScore";
+import { toast } from "@/lib/toast";
 
 export type AppStatus =
   | "applied"
@@ -135,6 +136,7 @@ export function KanbanBoard() {
       );
       setApps((prev) => [application, ...prev]);
       setForm(EMPTY_FORM);
+      toast(`✅ Added ${application.title}`, "success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create");
     } finally {
@@ -154,6 +156,7 @@ export function KanbanBoard() {
         { method: "PATCH", body: JSON.stringify({ status: next }) }
       );
       setApps((prev) => prev.map((a) => (a._id === app._id ? application : a)));
+      toast(`↩️ Moved to ${next}`, "success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to move");
     } finally {
@@ -168,6 +171,7 @@ export function KanbanBoard() {
     try {
       await api(`/api/applications/${app._id}`, { method: "DELETE" });
       setApps((prev) => prev.filter((a) => a._id !== app._id));
+      toast(`🗑️ Deleted ${app.title}`, "success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete");
     } finally {
@@ -193,9 +197,12 @@ export function KanbanBoard() {
         `✅ Imported ${data.imported}, skipped ${data.skipped} duplicate${data.invalid ? ", " + data.invalid + " invalid" : ""}.`
       );
       setImportErrors(data.errors || []);
+      toast(`📥 Imported ${data.imported} application${data.imported === 1 ? "" : "s"} from CSV`, "success");
       load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to import");
+      const msg = e instanceof Error ? e.message : "Failed to import";
+      setError(msg);
+      toast(msg, "error");
     } finally {
       setImporting(false);
     }
@@ -391,8 +398,26 @@ export function KanbanBoard() {
       </Card>
 
       {loading ? (
-        <Card material="paper" className="shadow-bevel-sm">
-          <p className="text-sm opacity-70">Loading your applications…</p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6" aria-busy="true" aria-label="Loading board">
+          {STATUSES.map((s) => (
+            <div key={s} className="flex flex-col gap-2">
+              <div className={`h-8 animate-pulse rounded-md border border-ink/15 ${COLUMN_META[s].cls} opacity-40`} />
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-28 animate-pulse rounded-lg border border-ink/10 bg-paper-dark/50 shadow-engraved" />
+              ))}
+            </div>
+          ))}
+        </div>
+      ) : apps.length === 0 ? (
+        <Card material="leather" framed className="shadow-bevel-lg text-center">
+          <p className="font-display text-lg font-bold text-paper-light text-embossed">
+            📭 Your tracker is empty
+          </p>
+          <p className="mx-auto mt-2 max-w-md text-sm text-paper-light/75">
+            Add your first application in the leather card above, or drag your{" "}
+            jobhunt-applications.csv into the import drawer — the kanban, ledger,
+            analytics and market intelligence will fill up from there.
+          </p>
         </Card>
       ) : (
         <>

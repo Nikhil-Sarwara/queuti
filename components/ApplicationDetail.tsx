@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge, Button, Card, TextField } from "@/components/ui";
 import { RoleFitScore } from "@/components/RoleFitScore";
+import { toast } from "@/lib/toast";
 
 export type DetailStatus =
   | "applied"
@@ -194,6 +195,7 @@ export function ApplicationDetail({ id }: { id: string; sessionEmail: string }) 
       );
       setApp(application);
       await load();
+      toast(`↩️ Moved to ${next}`, "success");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to move");
     } finally {
@@ -210,6 +212,7 @@ export function ApplicationDetail({ id }: { id: string; sessionEmail: string }) 
         { method: "PATCH", body: JSON.stringify({ notes, jd }) }
       );
       setApp(application);
+      toast("💾 Saved notes & job description", "success");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save notes");
     } finally {
@@ -234,6 +237,7 @@ export function ApplicationDetail({ id }: { id: string; sessionEmail: string }) 
       setEvNote("");
       setEvDate(new Date().toISOString().slice(0, 10));
       await load();
+      toast("🕰️ Event added to timeline", "success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add event");
     } finally {
@@ -247,6 +251,7 @@ export function ApplicationDetail({ id }: { id: string; sessionEmail: string }) 
     try {
       await api(`/api/applications/${id}/events/${ev._id}`, { method: "DELETE" });
       await load();
+      toast("🗑️ Timeline entry deleted", "success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete event");
     }

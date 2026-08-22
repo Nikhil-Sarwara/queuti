@@ -75,7 +75,11 @@ export function UpcomingInterviews() {
       </h2>
       <div className="mt-3">
         {loading ? (
-          <Card className="text-sm opacity-70">Loading upcoming events…</Card>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3" aria-busy="true" aria-label="Loading upcoming events">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-24 animate-pulse rounded-lg border border-ink/10 bg-paper-dark/50 shadow-engraved" />
+            ))}
+          </div>
         ) : error ? (
           <Card className="text-sm text-blood-dark">⚠️ {error}</Card>
         ) : events.length === 0 ? (

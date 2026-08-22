@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Badge, Button, Card, TextField } from "@/components/ui";
+import { toast } from "@/lib/toast";
 
 interface Company {
   _id: string;
@@ -114,6 +115,7 @@ export function CompaniesPanel() {
       }
       setCompanyForm(EMPTY_COMPANY);
       setEditingCompany(null);
+      toast(editingCompany ? "💾 Company updated" : "➕ Company added", "success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save company");
     } finally {
@@ -128,6 +130,7 @@ export function CompaniesPanel() {
       await api(`/api/companies/${c._id}`, { method: "DELETE" });
       setCompanies((prev) => prev.filter((x) => x._id !== c._id));
       setContacts((prev) => prev.map((ct) => ({ ...ct, companyId: "" })));
+      toast(`🗑️ Deleted ${c.name}`, "success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete company");
     }
@@ -158,6 +161,7 @@ export function CompaniesPanel() {
       }
       setContactForm(EMPTY_CONTACT);
       setEditingContact(null);
+      toast(editingContact ? "💾 Contact updated" : "➕ Contact added", "success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save contact");
     } finally {
@@ -171,6 +175,7 @@ export function CompaniesPanel() {
     try {
       await api(`/api/contacts/${c._id}`, { method: "DELETE" });
       setContacts((prev) => prev.filter((x) => x._id !== c._id));
+      toast(`🗑️ Deleted ${c.name}`, "success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete contact");
     }
