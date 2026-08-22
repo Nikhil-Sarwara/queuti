@@ -9,6 +9,7 @@ import { OverviewStats } from "@/components/OverviewStats";
 import { FollowUpPanel } from "@/components/FollowUpPanel";
 import { CompaniesPanel } from "@/components/CompaniesPanel";
 import { MlPanel } from "@/components/MlPanel";
+import SystemStatusCard from "@/components/SystemStatusCard";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +62,8 @@ export default async function DashboardPage() {
       <CompaniesPanel />
 
       <MlPanel />
+
+      <SystemStatusCard />
 
       <p className="mt-8 text-center text-xs opacity-50">
         <Link href="/" className="hover:underline">← Back to home</Link> ·{" "}
