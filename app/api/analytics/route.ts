@@ -2,10 +2,13 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { applications } from "@/lib/models";
 import { requireSession } from "@/lib/auth";
-import { withCache } from "@/lib/redis";
+import { cacheGet, cacheSet } from "@/lib/redis";
 import type { ApplicationStatus } from "@/lib/models";
 
 export const dynamic = "force-dynamic";
+
+/** Analytics cache TTL (s) (#29). */
+const ANALYTICS_CACHE_TTL = 30;
 
 const STATUSES: ApplicationStatus[] = [
   "applied",
@@ -129,10 +132,12 @@ export async function GET(req: Request) {
   const { session } = auth;
   const userId = new ObjectId(session.userId);
 
-  const payload = await withCache<AnalyticsPayload>(
-    `analytics:${session.userId}`,
-    30,
-    () => computeAnalytics(userId)
-  );
-  return NextResponse.json(payload);
+  const cacheKey = `analytics:${session.userId}`;
+  const hit = await cacheGet<AnalyticsPayload>(cacheKey);
+  if (hit) {
+    return NextResponse.json(hit, { headers: { "x-cache": "HIT" } });
+  }
+  const payload = await computeAnalytics(userId);
+  await cacheSet(cacheKey, payload, ANALYTICS_CACHE_TTL);
+  return NextResponse.json(payload, { headers: { "x-cache": "MISS" } });
 }

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { applications, events } from "@/lib/models";
 import { requireSession } from "@/lib/auth";
-import { cacheDel } from "@/lib/redis";
+import { cacheDel, bumpUserCache } from "@/lib/redis";
 import { cleanStr, isHttpUrl, strTooLong } from "@/lib/validate";
 import type { Application, ApplicationEvent, ApplicationStatus } from "@/lib/models";
 
@@ -181,6 +181,7 @@ export async function PATCH(
     { $set },
     { returnDocument: "after" }
   );
+  await bumpUserCache(session.userId);
   await cacheDel(`analytics:${session.userId}`).catch(() => {});
 
   return NextResponse.json({ application: res ? serialize(res) : null });
@@ -213,6 +214,7 @@ export async function DELETE(
   if (!res) {
     return NextResponse.json({ error: "Application not found" }, { status: 404 });
   }
+  await bumpUserCache(session.userId);
   await cacheDel(`analytics:${session.userId}`).catch(() => {});
   return NextResponse.json({ ok: true, archived: true });
 }

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { applications, events } from "@/lib/models";
 import { requireSession } from "@/lib/auth";
-import { cacheDel } from "@/lib/redis";
+import { cacheDel, bumpUserCache } from "@/lib/redis";
 import type { ApplicationEvent, ApplicationStatus } from "@/lib/models";
 
 export const dynamic = "force-dynamic";
@@ -145,6 +145,7 @@ export async function POST(req: Request) {
     updated += r.modifiedCount;
   }
 
+  await bumpUserCache(session.userId);
   await cacheDel(`analytics:${session.userId}`).catch(() => {});
 
   return NextResponse.json({ ok: true, updated });

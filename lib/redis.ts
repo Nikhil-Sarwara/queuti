@@ -116,6 +116,41 @@ export async function withCache<T>(
   return value;
 }
 
+// ---- per-user cache versioning (#29) ----
+// Cached list pages embed the user's version in their key, so a write only
+// has to bump ONE version counter instead of deleting every page key.
+
+const VERSION_KEY = (userId: string) => `ver:u:${userId}`;
+const VERSION_TTL = 7 * 24 * 3600; // 7d
+
+/** Current cache version for a user (0 until the first write, since a fresh
+ *  Redis key starts at 0 — a first incr yields 1, which must differ from the
+ *  version any pre-write cached page was stored under). */
+export async function userCacheVersion(userId: string): Promise<number> {
+  const v = await cacheGet<number>(VERSION_KEY(userId));
+  return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : 0;
+}
+
+/**
+ * Bump a user's cache version — invalidates every cached list page (and any
+ * other versioned key) for them. Atomic incr on Upstash (first write moves
+ * 0 → 1, so even the very first write invalidates any pre-write cache);
+ * in-memory fallback for local dev. Never throws.
+ */
+export async function bumpUserCache(userId: string): Promise<void> {
+  const r = getRedis();
+  if (!r) {
+    const v = await userCacheVersion(userId);
+    await cacheSet(VERSION_KEY(userId), v + 1, VERSION_TTL);
+    return;
+  }
+  try {
+    await r.incr(VERSION_KEY(userId));
+  } catch (err) {
+    console.error("[queuti] cache bump failed:", userId, err);
+  }
+}
+
 /** Push an item onto a FIFO queue (LPUSH + RPOP). */
 export async function queuePush<T>(queue: string, item: T): Promise<boolean> {
   const r = getRedis();

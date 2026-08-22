@@ -65,4 +65,35 @@ describe("redis fallback (no env)", () => {
     expect(await queuePop("q")).toBeNull();
     expect(await queueLen("q")).toBe(0);
   });
+
+  it("user cache version starts at 0 and bumps on every write (#29)", async () => {
+    const { userCacheVersion, bumpUserCache } = await freshRedis();
+    expect(await userCacheVersion("u1")).toBe(0);
+    await bumpUserCache("u1");
+    await bumpUserCache("u1");
+    expect(await userCacheVersion("u1")).toBe(2);
+  });
+
+  it("versions are per-user (#29)", async () => {
+    const { userCacheVersion, bumpUserCache } = await freshRedis();
+    await bumpUserCache("alice");
+    await bumpUserCache("alice");
+    await bumpUserCache("bob");
+    expect(await userCacheVersion("alice")).toBe(2);
+    expect(await userCacheVersion("bob")).toBe(1);
+  });
+
+  it("a version bump invalidates previously cached list payloads (#29)", async () => {
+    const { cacheGet, cacheSet, userCacheVersion, bumpUserCache } =
+      await freshRedis();
+    const key = (v: number) => `apps:list:u1:${v}:0:1:50:dateApplied:-1`;
+    // Simulate: request 1 computes + fills at version 0 (pre-write)…
+    await cacheSet(key(0), { n: 1 }, 60);
+    expect(await cacheGet(key(0))).toEqual({ n: 1 });
+    // …a write bumps the version…
+    await bumpUserCache("u1");
+    expect(await userCacheVersion("u1")).toBe(1);
+    // …so the new page key (v1) misses even though the old page (v0) lingers.
+    expect(await cacheGet(key(1))).toBeNull();
+  });
 });

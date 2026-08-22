@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { applications, ensureIndexes, events } from "@/lib/models";
 import { requireSession } from "@/lib/auth";
-import { cacheDel } from "@/lib/redis";
+import { cacheDel, cacheGet, cacheSet, userCacheVersion, bumpUserCache } from "@/lib/redis";
 import { cleanStr, isHttpUrl, strTooLong, parsePagination, companyNameOf } from "@/lib/validate";
 import type { Application, ApplicationEvent, ApplicationStatus } from "@/lib/models";
 
@@ -16,6 +16,19 @@ const STATUSES: ApplicationStatus[] = [
   "rejected",
   "ghosted",
 ];
+
+/** List cache TTL (s) — short, keeps the kanban/ledger fresh (#29). */
+const LIST_CACHE_TTL = 30;
+
+interface ListPayload {
+  applications: ReturnType<typeof serialize>[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
 
 function toHex(id: unknown): string {
   return id instanceof ObjectId ? id.toHexString() : String(id);
@@ -82,7 +95,9 @@ function parseBody(body: Record<string, unknown>) {
 }
 
 /** GET /api/applications — paginated, sortable list of the user's applications.
- *  Archived apps are hidden by default; pass ?archived=1 for the archive view (#26). */
+ *  Archived apps are hidden by default; pass ?archived=1 for the archive view (#26).
+ *  Cache-aside (Upstash Redis, 30s TTL): cache is keyed per user × list-version ×
+ *  page params, so any write (version bump) invalidates every page at once (#29). */
 export async function GET(req: Request) {
   const auth = await requireSession(req);
   if ("error" in auth) return auth.error;
@@ -98,8 +113,22 @@ export async function GET(req: Request) {
   }
   const { page, limit, sort, order } = pageInfo;
 
-  const url = new URL(req.url);
-  const archived = url.searchParams.get("archived") === "1";
+  const archived = new URL(req.url).searchParams.get("archived") === "1";
+
+  const cacheKey = [
+    "apps:list",
+    session.userId,
+    await userCacheVersion(session.userId),
+    archived ? 1 : 0,
+    page,
+    limit,
+    sort,
+    order,
+  ].join(":");
+  const hit = await cacheGet<ListPayload>(cacheKey);
+  if (hit) {
+    return NextResponse.json(hit, { headers: { "x-cache": "HIT" } });
+  }
 
   const col = await applications();
   const filter = {
@@ -118,7 +147,7 @@ export async function GET(req: Request) {
       .toArray(),
   ]);
 
-  return NextResponse.json({
+  const payload: ListPayload = {
     applications: docs.map(serialize),
     pagination: {
       page,
@@ -126,7 +155,9 @@ export async function GET(req: Request) {
       total,
       totalPages: Math.max(1, Math.ceil(total / limit)),
     },
-  });
+  };
+  await cacheSet(cacheKey, payload, LIST_CACHE_TTL);
+  return NextResponse.json(payload, { headers: { "x-cache": "MISS" } });
 }
 
 /** POST /api/applications — create a new application. */
@@ -168,6 +199,7 @@ export async function POST(req: Request) {
   };
   const res = await col.insertOne(doc);
   await ensureIndexes().catch(() => {});
+  await bumpUserCache(session.userId);
   await cacheDel(`analytics:${session.userId}`).catch(() => {});
 
   // Stage history: the moment of application.
