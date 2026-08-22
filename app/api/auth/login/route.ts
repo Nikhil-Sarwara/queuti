@@ -44,7 +44,12 @@ export async function POST(req: Request) {
 
   const res = NextResponse.json({
     token,
-    user: { _id: user._id!.toHexString(), email: user.email, name: user.name },
+    user: {
+      _id: user._id!.toHexString(),
+      email: user.email,
+      name: user.name,
+      verified: user.verified === true,
+    },
   });
   res.cookies.set("queuti_token", token, sessionCookieOptions());
   return res;

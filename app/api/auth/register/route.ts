@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { users } from "@/lib/models";
 import { hashPassword, signSession, sessionCookieOptions } from "@/lib/auth";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { issueVerification } from "../verify/_lib";
 
 export const dynamic = "force-dynamic";
 
@@ -45,9 +46,13 @@ export async function POST(req: Request) {
     email,
     passwordHash,
     name: body.name?.trim() || undefined,
+    verified: false, // (#38) must click the emailed link before full trust
     createdAt: now,
     updatedAt: now,
   });
+
+  // Issue + log the verification link (no SMTP required; dev echoes it back).
+  const { verifyUrl } = await issueVerification(insertedId, email, new URL(req.url).origin);
 
   const user = { _id: insertedId, email, name: body.name?.trim() };
   const token = await signSession({
@@ -55,7 +60,13 @@ export async function POST(req: Request) {
     email,
   });
 
-  const res = NextResponse.json({ token, user }, { status: 201 });
+  const payload: { token: unknown; user: unknown; devVerifyLink?: string } = {
+    token,
+    user: { ...user, verified: false },
+  };
+  if (process.env.NODE_ENV !== "production") payload.devVerifyLink = verifyUrl;
+
+  const res = NextResponse.json(payload, { status: 201 });
   res.cookies.set("queuti_token", token, sessionCookieOptions());
   return res;
 }

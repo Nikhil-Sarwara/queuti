@@ -95,6 +95,12 @@ export interface User {
   email: string;
   passwordHash?: string;
   name?: string;
+  /** True once the email address has been verified (#38). */
+  verified?: boolean;
+  /** SHA-256 hash of the active email-verification token (lib/verify.ts). */
+  verifyTokenHash?: string;
+  /** When the current verification token expires (7d after issue). */
+  verifyTokenExpiresAt?: Date;
   /** SHA-256 hash of the active password-reset token (see lib/reset.ts). */
   resetTokenHash?: string;
   /** When the current reset token expires (1h after issue). */

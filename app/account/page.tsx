@@ -6,6 +6,7 @@ import { users } from "@/lib/models";
 import { Card } from "@/components/ui";
 import { ObjectId } from "mongodb";
 import { ChangePasswordForm } from "./ChangePasswordForm";
+import { ResendVerificationButton } from "./ResendVerificationButton";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,24 @@ export default async function AccountPage() {
       </header>
 
       <div className="space-y-5">
+        {!user?.verified && (
+          <Card material="wood" framed className="border-brass/60 shadow-bevel-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="font-display text-base font-bold text-ink">
+                  ⚠️ Verify your email
+                </h2>
+                <p className="mt-0.5 text-xs opacity-80">
+                  Confirm <strong>{user?.email ?? session.email}</strong> to
+                  unlock the full experience. A link was emailed to you —
+                  didn&apos;t get it? Resend below.
+                </p>
+              </div>
+              <ResendVerificationButton />
+            </div>
+          </Card>
+        )}
+
         <Card>
           <h2 className="font-display text-lg font-bold">Profile</h2>
           <dl className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">

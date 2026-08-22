@@ -59,6 +59,47 @@ export async function sendResetEmail(
   }
 }
 
+/** Send an email-verification message (#38). Never throws. */
+export async function sendVerificationEmail(
+  to: string,
+  verifyUrl: string
+): Promise<MailResult> {
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER || "no-reply@queuti.com";
+  const subject = "Queuti — verify your email";
+  const text = [
+    "Welcome to Queuti! Please confirm your email address.",
+    "",
+    `Verify your email here (link valid for 7 days):`,
+    verifyUrl,
+    "",
+    "If you didn't create a Queuti account, you can safely ignore this email.",
+  ].join("\n");
+
+  if (!isSmtpConfigured()) {
+    console.warn(
+      `[mailer] SMTP not configured — verification email for ${to} would be:\n${text}`
+    );
+    return { sent: false, reason: "SMTP not configured" };
+  }
+
+  try {
+    await smtpSend({
+      host: process.env.SMTP_HOST!,
+      port: Number(process.env.SMTP_PORT || 465),
+      user: process.env.SMTP_USER!,
+      pass: process.env.SMTP_PASS!,
+      from,
+      to,
+      subject,
+      text,
+    });
+    return { sent: true };
+  } catch (err) {
+    console.error("[mailer] SMTP send failed:", err);
+    return { sent: false, reason: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 // ---------- raw SMTP (implicit TLS, AUTH PLAIN) ----------
 
 interface SmtpOptions {
