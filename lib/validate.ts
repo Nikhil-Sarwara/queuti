@@ -22,6 +22,16 @@ export function strTooLong(s: string, max: number): boolean {
   return s.length > max;
 }
 
+/**
+ * Resolve the company field from a body, accepting both names: `company`
+ * (the frontend form name and the CSV import column) and `companyName` (the
+ * canonical API/DB field). Prefers `companyName` when both are present;
+ * never silently drops either one (#28).
+ */
+export function companyNameOf(body: Record<string, unknown>): string {
+  return cleanStr(body.companyName) || cleanStr(body.company);
+}
+
 export function isEmailLike(s: string): boolean {
   return EMAIL_RE.test(s);
 }

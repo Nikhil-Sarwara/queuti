@@ -97,8 +97,14 @@ export async function PATCH(
 
   const $set: Partial<Application> = {};
   for (const f of EDITABLE_FIELDS) {
-    if (body[f] !== undefined) {
-      const value = str(body[f]);
+    // Accept `company` as an alias for `companyName` (#28) — the form field
+    // and CSV column are named `company`, the API field `companyName`.
+    const raw =
+      f === "companyName" && body.companyName === undefined
+        ? body.company
+        : body[f];
+    if (raw !== undefined) {
+      const value = str(raw);
       if (strTooLong(value, FIELD_LIMITS[f])) {
         return NextResponse.json(
           { error: `${f} must be ≤ ${FIELD_LIMITS[f]} characters` },

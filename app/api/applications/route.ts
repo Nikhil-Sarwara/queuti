@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 import { applications, ensureIndexes, events } from "@/lib/models";
 import { requireSession } from "@/lib/auth";
 import { cacheDel } from "@/lib/redis";
-import { cleanStr, isHttpUrl, strTooLong, parsePagination } from "@/lib/validate";
+import { cleanStr, isHttpUrl, strTooLong, parsePagination, companyNameOf } from "@/lib/validate";
 import type { Application, ApplicationEvent, ApplicationStatus } from "@/lib/models";
 
 export const dynamic = "force-dynamic";
@@ -53,7 +53,7 @@ function parseBody(body: Record<string, unknown>) {
   const str = cleanStr;
   const fields = {
     title: str(body.title),
-    companyName: str(body.companyName),
+    companyName: companyNameOf(body),
     applyUrl: str(body.applyUrl),
     hiringEmail: str(body.hiringEmail),
     source: str(body.source),

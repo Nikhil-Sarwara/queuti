@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   cleanStr,
+  companyNameOf,
   isEmailLike,
   isHttpUrl,
   strTooLong,
@@ -27,6 +28,14 @@ describe("validation helpers (#25)", () => {
   it("flags over-long strings", () => {
     expect(strTooLong("abc", 5)).toBe(false);
     expect(strTooLong("abcdef", 5)).toBe(true);
+  });
+
+  it("accepts company as an alias for companyName (#28)", () => {
+    expect(companyNameOf({ company: "Acme Corp", title: "x" })).toBe("Acme Corp");
+    expect(companyNameOf({ companyName: "Wayne", company: "Acme" })).toBe("Wayne");
+    expect(companyNameOf({ companyName: "" })).toBe("");
+    expect(companyNameOf({ company: "  Stark Industries  " })).toBe("Stark Industries");
+    expect(companyNameOf({ title: "no company here" })).toBe("");
   });
 });
 
