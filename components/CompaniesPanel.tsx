@@ -237,7 +237,7 @@ export function CompaniesPanel() {
             </div>
           </form>
 
-          <ul className="mt-4 space-y-2">
+          <ul className="mt-4 max-h-[400px] space-y-2 overflow-y-auto scrollbar-thin">
             {companies.length === 0 && (
               <li className="text-sm italic text-text-tertiary">No companies yet.</li>
             )}
@@ -334,7 +334,7 @@ export function CompaniesPanel() {
             </div>
           </form>
 
-          <ul className="mt-4 space-y-2">
+          <ul className="mt-4 max-h-[400px] space-y-2 overflow-y-auto scrollbar-thin">
             {contacts.length === 0 && (
               <li className="text-sm italic text-text-tertiary">No contacts yet.</li>
             )}

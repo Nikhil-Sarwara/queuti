@@ -33,7 +33,7 @@ interface Stat {
 
 function StatCard({ stat }: { stat: Stat }) {
   return (
-    <Card className="flex flex-col items-center text-center p-4">
+    <Card elevation={2} className="flex flex-col items-center text-center p-4">
       <span className="text-xl">{stat.icon}</span>
       <p className="mt-2 text-2xl font-bold text-text-primary">
         {stat.value}

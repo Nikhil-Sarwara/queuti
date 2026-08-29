@@ -653,13 +653,13 @@ export function KanbanBoard() {
               <div className="flex gap-4 overflow-x-auto pb-2">
                 {STATUSES.filter((s) => !hiddenStatuses.has(s)).map((s) => (
                   <div key={s} className="flex min-w-[280px] flex-col gap-2">
-                    <div className={`rounded-lg px-3 py-1.5 text-center text-xs font-bold uppercase tracking-widest ${COLUMN_META[s].cls}`}>
+                    <div className={`rounded-lg px-3 py-2 text-center text-xs font-bold uppercase tracking-widest shadow-1 ${COLUMN_META[s].cls}`}>
                       {COLUMN_META[s].label}
                       <span className="ml-1.5 rounded-full bg-elevated/60 px-1.5 text-[10px]">
                         {byStatus(s).length}
                       </span>
                     </div>
-                    <div className="flex min-h-[120px] flex-col gap-2 rounded-lg border border-border-subtle bg-elevated/50 p-2">
+                    <div className="flex min-h-[120px] max-h-[500px] flex-col gap-2 rounded-lg border border-border-subtle bg-elevated/50 p-2 scrollbar-thin overflow-y-auto">
                       {byStatus(s).length === 0 && (
                         <p className="p-2 text-center text-xs italic text-text-tertiary">
                           {filtersActive ? "no matches" : "empty slot"}

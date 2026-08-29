@@ -72,7 +72,7 @@ export function FollowUpPanel() {
           {items.length} overdue
         </span>
       </div>
-      <ul className="mt-3 flex flex-col gap-2">
+      <ul className="mt-3 max-h-[400px] flex flex-col gap-2 overflow-y-auto scrollbar-thin">
         {items.map((it) => (
           <li
             key={it._id}

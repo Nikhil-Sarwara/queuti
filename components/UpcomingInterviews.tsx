@@ -90,7 +90,7 @@ export function UpcomingInterviews() {
             </p>
           </Card>
         ) : (
-          <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <ul className="grid max-h-[500px] gap-3 overflow-y-auto scrollbar-thin md:grid-cols-2 xl:grid-cols-3">
             {events.map((ev) => {
               const meta = EVENT_META[ev.type] || { label: ev.type, tone: "interview" as const };
               const d = fmtDate(ev.occurredAt);

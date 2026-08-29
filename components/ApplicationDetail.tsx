@@ -418,7 +418,7 @@ export function ApplicationDetail({ id }: { id: string; sessionEmail: string }) 
           <h3 className="text-base font-bold text-text-primary">
             Stage history
           </h3>
-          <ol className="mt-3 space-y-0">
+          <ol className="mt-3 max-h-[400px] space-y-0 overflow-y-auto scrollbar-thin">
             {events.length === 0 && (
               <li className="py-2 text-sm italic text-text-tertiary">No events recorded yet.</li>
             )}

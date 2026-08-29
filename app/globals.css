@@ -187,3 +187,46 @@ body {
 .page-padding {
   padding: clamp(1rem, 0.5rem + 2vw, 2rem);
 }
+
+/* ---- Scrollbar styling ---- */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgb(var(--border));
+  border-radius: 9999px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--text-tertiary));
+}
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--border)) transparent;
+}
+
+/* ---- Elevation helpers for component distinction ---- */
+.card-elevated {
+  box-shadow: var(--shadow-2);
+}
+.card-prominent {
+  box-shadow: var(--shadow-3);
+}
+.card-inset {
+  background-color: rgb(var(--elevated));
+  border: 1px solid rgb(var(--border-subtle));
+}
+
+/* ---- Dark mode: stronger borders for contrast ---- */
+[data-theme="dark"] .border-contrast {
+  border-color: rgb(var(--text-tertiary));
+}
+
+/* ---- Select option dark mode fix ---- */
+[data-theme="dark"] option {
+  background-color: rgb(var(--surface));
+  color: rgb(var(--text-primary));
+}
