@@ -50,7 +50,7 @@ interface MarketData {
 /**
  * Resolve theme tokens to concrete values for recharts (canvas props can't
  * read CSS vars directly). Re-reads on every render + forces a re-render
- * when data-theme changes, so charts swap palettes live (#31).
+ * when data-theme changes, so charts swap palettes live.
  */
 function useChartTheme() {
   const [tick, setTick] = useState(0);
@@ -61,7 +61,7 @@ function useChartTheme() {
     mo.observe(el, { attributes: true, attributeFilter: ["data-theme"] });
     return () => mo.disconnect();
   }, []);
-  void tick; // re-render trigger only
+  void tick;
 
   const cv = (name: string, fallback: string) => {
     const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -69,24 +69,24 @@ function useChartTheme() {
   };
   return {
     colors: [
-      cv("--brass", "#c9a227"),
-      cv("--leather-500", "#7a5434"),
-      cv("--moss", "#5a6b3c"),
-      cv("--blood", "#8e3b2e"),
-      cv("--leather-600", "#6b4a2f"),
-      cv("--moss-light", "#74864f"),
-      cv("--brass-dark", "#a8861f"),
-      cv("--ink", "#2b2117"),
+      cv("--accent", "#5B5FC7"),
+      cv("--accent-hover", "#4A4EB5"),
+      cv("--success", "#2E7D32"),
+      cv("--error", "#D32F2F"),
+      cv("--info", "#0288D1"),
+      cv("--warning", "#ED6C02"),
+      cv("--text-secondary", "#6B6B6B"),
+      cv("--text-primary", "#1A1A1A"),
     ],
-    tick: { fontSize: 11, fill: cv("--ink-soft", "#5c4d3a") },
-    grid: cv("--graph-grid", "#ddd3bd"),
-    tipBg: cv("--graph-tip-bg", "#f6f0e2"),
-    tipBorder: cv("--graph-tip-border", "#a8861f"),
-    cursor: cv("--graph-cursor", "rgba(201,162,39,0.12)"),
+    tick: { fontSize: 11, fill: cv("--text-secondary", "#6B6B6B") },
+    grid: cv("--graph-grid", "#E8E8E6"),
+    tipBg: cv("--graph-tip-bg", "#FAFAF8"),
+    tipBorder: cv("--graph-tip-border", "#5B5FC7"),
+    cursor: cv("--graph-cursor", "rgba(91,95,199,0.12)"),
   };
 }
 
-/** Market intelligence charts (#18) — recharts on the skeuomorphic desk. */
+/** Market intelligence charts — recharts on the clean dashboard. */
 export function MarketIntel() {
   const chart = useChartTheme();
   const [data, setData] = useState<MarketData | null>(null);
@@ -103,11 +103,11 @@ export function MarketIntel() {
   }, []);
   if (error) {
     return (
-      <Card className="text-sm text-blood-dark" role="alert">⚠️ Could not load market intelligence: {error}</Card>
+      <Card className="text-sm text-error" role="alert">Could not load market intelligence: {error}</Card>
     );
   }
   if (!data) {
-    return <Card className="text-sm opacity-70">🌍 Loading market intelligence…</Card>;
+    return <Card className="text-sm text-text-secondary">Loading market intelligence…</Card>;
   }
 
   const empty =
@@ -121,8 +121,8 @@ export function MarketIntel() {
 
   if (empty) {
     return (
-      <Card material="paper" framed className="shadow-bevel-sm">
-        <p className="text-sm italic opacity-60">
+      <Card>
+        <p className="text-sm italic text-text-tertiary">
           No data yet — import your applications (CSV or the form on the
           dashboard) and this page will show your market intelligence.
         </p>
@@ -136,8 +136,8 @@ export function MarketIntel() {
   return (
     <div className="mt-3 grid gap-3 lg:grid-cols-2">
       {/* by company */}
-      <Card material="paper" framed className="shadow-bevel">
-        <h3 className="font-display text-sm font-bold text-engraved">🏢 Applications by company</h3>
+      <Card>
+        <h3 className="text-sm font-bold text-text-primary">Applications by company</h3>
         <div className="mt-3 h-[260px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data.byCompany} margin={{ top: 4, right: 8, left: -14, bottom: 0 }}>
@@ -155,8 +155,8 @@ export function MarketIntel() {
       </Card>
 
       {/* by source */}
-      <Card material="paper" framed className="shadow-bevel">
-        <h3 className="font-display text-sm font-bold text-engraved">🪧 Applications by source</h3>
+      <Card>
+        <h3 className="text-sm font-bold text-text-primary">Applications by source</h3>
         <div className="mt-3 h-[260px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -181,7 +181,7 @@ export function MarketIntel() {
             </PieChart>
           </ResponsiveContainer>
         </div>
-        <ul className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] opacity-75">
+        <ul className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-text-secondary">
           {data.bySource.map((s, i) => (
             <li key={s.label} className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full" style={{ background: chart.colors[i % chart.colors.length] }} />
@@ -192,8 +192,8 @@ export function MarketIntel() {
       </Card>
 
       {/* by role (title) */}
-      <Card material="paper" framed className="shadow-bevel">
-        <h3 className="font-display text-sm font-bold text-engraved">🧭 Applications by role</h3>
+      <Card>
+        <h3 className="text-sm font-bold text-text-primary">Applications by role</h3>
         <div className="mt-3 h-[260px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data.byRole} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 0 }}>
@@ -211,8 +211,8 @@ export function MarketIntel() {
       </Card>
 
       {/* avg response days per source */}
-      <Card material="paper" framed className="shadow-bevel">
-        <h3 className="font-display text-sm font-bold text-engraved">⏱️ Avg response days by source</h3>
+      <Card>
+        <h3 className="text-sm font-bold text-text-primary">Avg response days by source</h3>
         <div className="mt-3 h-[260px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data.responseDaysBySource} margin={{ top: 4, right: 8, left: -14, bottom: 0 }}>
@@ -230,10 +230,10 @@ export function MarketIntel() {
         </div>
       </Card>
 
-      {/* salary by role (#33) */}
+      {/* salary by role */}
       {data.salaryByRole.length > 0 && (
-        <Card material="paper" framed className="shadow-bevel">
-          <h3 className="font-display text-sm font-bold text-engraved">💰 Avg salary by role</h3>
+        <Card>
+          <h3 className="text-sm font-bold text-text-primary">Avg salary by role</h3>
           <div className="mt-3 h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.salaryByRole} layout="vertical" margin={{ top: 4, right: 24, left: 8, bottom: 0 }}>
@@ -250,20 +250,20 @@ export function MarketIntel() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] opacity-75">
+          <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-secondary">
             {data.salaryByRole.slice(0, 4).map((s) => (
               <li key={s.label}>
-                <span className="font-bold text-ink">{s.label}</span>: {fmtMoney(s.min)}–{fmtMoney(s.max)}
+                <span className="font-bold text-text-primary">{s.label}</span>: {fmtMoney(s.min)}–{fmtMoney(s.max)}
               </li>
             ))}
           </ul>
         </Card>
       )}
 
-      {/* applications over time (#33) */}
+      {/* applications over time */}
       {data.trend.length > 0 && (
-        <Card material="paper" framed className="shadow-bevel">
-          <h3 className="font-display text-sm font-bold text-engraved">📈 Applications — last 12 weeks</h3>
+        <Card>
+          <h3 className="text-sm font-bold text-text-primary">Applications — last 12 weeks</h3>
           <div className="mt-3 h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data.trend} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
@@ -282,10 +282,10 @@ export function MarketIntel() {
         </Card>
       )}
 
-      {/* offer rate by source (#33) */}
+      {/* offer rate by source */}
       {data.offerRateBySource.length > 0 && (
-        <Card material="paper" framed className="shadow-bevel">
-          <h3 className="font-display text-sm font-bold text-engraved">🏆 Offer rate by source</h3>
+        <Card>
+          <h3 className="text-sm font-bold text-text-primary">Offer rate by source</h3>
           <div className="mt-3 h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.offerRateBySource} margin={{ top: 4, right: 8, left: -14, bottom: 0 }}>

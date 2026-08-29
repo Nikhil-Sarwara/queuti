@@ -1,28 +1,29 @@
 import { ButtonHTMLAttributes, forwardRef } from "react";
 
-export type ButtonVariant = "leather" | "brass" | "paper" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
 
 const base =
-  "inline-flex select-none items-center justify-center gap-2 border font-semibold tracking-wide " +
-  "transition-all duration-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brass/60 " +
-  "active:translate-y-px active:shadow-pressed disabled:pointer-events-none disabled:opacity-50";
+  "inline-flex select-none items-center justify-center gap-2 font-medium " +
+  "transition-all duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-accent " +
+  "hover:translate-y-[-0.5px] hover:shadow-2 active:translate-y-0 active:shadow-1 " +
+  "disabled:pointer-events-none disabled:opacity-50";
 
 const variants: Record<ButtonVariant, string> = {
-  leather:
-    "text-paper-light border-leather-800/70 bg-gradient-to-b from-leather-400 via-leather-500 to-leather-700 shadow-bevel hover:brightness-110",
-  brass:
-    "text-ink border-brass-dark/70 bg-gradient-to-b from-brass-light via-brass to-brass-dark shadow-bevel hover:brightness-105",
-  paper:
-    "text-ink border-paper-dark bg-gradient-to-b from-paper-light via-paper to-paper-dark shadow-bevel hover:brightness-105",
+  primary:
+    "bg-accent text-white border border-accent hover:bg-accent-hover active:bg-accent-hover",
+  secondary:
+    "bg-transparent text-text-primary border border-border hover:bg-elevated hover:border-border-subtle",
+  ghost:
+    "bg-transparent text-text-secondary border border-transparent hover:bg-elevated hover:text-text-primary",
   danger:
-    "text-paper-light border-blood-dark/80 bg-gradient-to-b from-blood-light to-blood shadow-bevel hover:brightness-110",
+    "bg-error text-white border border-error hover:bg-error/90 active:bg-error/80",
 };
 
 const sizes: Record<ButtonSize, string> = {
-  sm: "rounded-[5px] px-2.5 py-1 text-xs",
-  md: "rounded-md px-4 py-2 text-sm",
-  lg: "rounded-lg px-6 py-3 text-base",
+  sm: "h-8 rounded-md px-2.5 text-xs",
+  md: "h-10 rounded-lg px-4 text-sm",
+  lg: "h-12 rounded-lg px-6 text-base",
 };
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -31,11 +32,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 /**
- * Tactile, physical push-button. Pressing it depresses the face
- * (translate + inset shadow) — the core skeuomorphic interaction.
+ * Clean, flat button. Hover lifts with shadow + subtle translateY.
+ * Active depresses back down. Focus ring uses accent color.
  */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = "leather", size = "md", className = "", ...props }, ref) => (
+  ({ variant = "primary", size = "md", className = "", ...props }, ref) => (
     <button
       ref={ref}
       className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}

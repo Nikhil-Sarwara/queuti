@@ -8,7 +8,7 @@ import { SearchPalette } from "@/components/SearchPalette";
 export const metadata: Metadata = {
   title: { default: "Queuti — Job Tracker & Market Intelligence", template: "%s · Queuti" },
   description:
-    "Track every job application, learn from real data, and know the market — a skeuomorphic job-hunt companion.",
+    "Track every job application, learn from real data, and know the market — your modern job-hunt companion.",
   applicationName: "Queuti",
   icons: { icon: "/icon.svg" },
   manifest: "/manifest.webmanifest",
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Queuti — Job Tracker & Market Intelligence",
     description:
-      "Track every job application, learn from real data, and know the market — a skeuomorphic job-hunt companion.",
+      "Track every job application, learn from real data, and know the market — your modern job-hunt companion.",
     url: "https://queuti.com",
     siteName: "Queuti",
     type: "website",
@@ -31,17 +31,22 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#6b4a2f",
+  themeColor: "#5B5FC7",
   width: "device-width",
   initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-dvh bg-bg font-sans text-text-primary antialiased">
         <ThemeInit />
-        {children}
+        <main className="px-[clamp(1rem,0.5rem+2vw,2rem)]">
+          <div className="mx-auto max-w-[1280px]">
+            {children}
+          </div>
+        </main>
         <ThemeToggle />
         <SearchPalette />
         <Toaster />

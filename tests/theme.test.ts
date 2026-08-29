@@ -6,11 +6,12 @@ import {
   sanitizeStoredTheme,
 } from "@/lib/theme";
 
-describe("theme persistence (#31/#37)", () => {
-  it("recognises only the three known themes", () => {
-    expect(isTheme("paper")).toBe(true);
+describe("theme persistence (v2)", () => {
+  it("recognises only the two known themes", () => {
+    expect(isTheme("light")).toBe(true);
     expect(isTheme("dark")).toBe(true);
-    expect(isTheme("midnight")).toBe(true);
+    expect(isTheme("paper")).toBe(false);
+    expect(isTheme("midnight")).toBe(false);
     expect(isTheme("blue")).toBe(false);
     expect(isTheme("")).toBe(false);
     expect(isTheme(null)).toBe(false);
@@ -18,21 +19,21 @@ describe("theme persistence (#31/#37)", () => {
   });
 
   it("an explicit stored choice wins over system preference", () => {
-    expect(resolveTheme("midnight", false)).toBe("midnight");
     expect(resolveTheme("dark", false)).toBe("dark");
-    expect(resolveTheme("paper", true)).toBe("paper");
+    expect(resolveTheme("light", true)).toBe("light");
   });
 
   it("falls back to prefers-color-scheme on first visit (no stored choice)", () => {
     expect(resolveTheme(null, true)).toBe("dark");
-    expect(resolveTheme(undefined, false)).toBe("paper");
+    expect(resolveTheme(undefined, false)).toBe("light");
   });
 
   it("ignores tampered/legacy stored values and falls back to the default", () => {
     expect(resolveTheme("hotdog", true)).toBe("dark"); // system pref still applies
-    expect(resolveTheme("hotdog", false)).toBe("paper");
+    expect(resolveTheme("hotdog", false)).toBe("light");
     expect(sanitizeStoredTheme("hotdog")).toBeNull();
     expect(sanitizeStoredTheme("dark")).toBe("dark");
+    expect(sanitizeStoredTheme("light")).toBe("light");
     expect(sanitizeStoredTheme(null)).toBeNull();
   });
 

@@ -37,22 +37,22 @@ export function ResendVerificationButton() {
 
   return (
     <div className="flex flex-col items-end gap-1.5">
-      <Button type="button" variant="brass" size="sm" onClick={resend} disabled={busy}>
+      <Button type="button" variant="primary" size="sm" onClick={resend} disabled={busy}>
         {busy ? "Sending…" : "📧 Resend verification"}
       </Button>
       {devLink && (
-        <Card material="paper" className="!p-2 shadow-bevel-sm">
+        <Card className="!p-2">
           <p className="text-[11px] opacity-60">Dev link (no SMTP configured):</p>
           <a
             href={devLink}
-            className="block max-w-[260px] truncate text-[11px] font-semibold text-brass-dark underline underline-offset-2"
+            className="block max-w-[260px] truncate text-[11px] font-semibold text-accent underline underline-offset-2"
           >
             {devLink}
           </a>
         </Card>
       )}
       {error && (
-        <p className="text-xs font-semibold text-blood" role="alert">
+        <p className="text-xs font-semibold text-error" role="alert">
           {error}
         </p>
       )}

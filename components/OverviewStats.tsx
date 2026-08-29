@@ -31,27 +31,26 @@ interface Stat {
   sub?: string;
 }
 
-/** Recessed engraved value on a paper ledger — reads like a pressed stamp. */
 function StatCard({ stat }: { stat: Stat }) {
   return (
-    <Card material="paper" framed className="text-center">
-      <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-full border border-brass-dark/50 bg-gradient-to-b from-brass-light to-brass text-base shadow-bevel-sm">
-        {stat.icon}
-      </span>
-      <p className="mt-2 font-display text-3xl font-bold text-engraved">
+    <Card className="flex flex-col items-center text-center p-4">
+      <span className="text-xl">{stat.icon}</span>
+      <p className="mt-2 text-2xl font-bold text-text-primary">
         {stat.value}
       </p>
-      <p className="mt-1 text-[11px] uppercase tracking-wider opacity-70">
+      <p className="mt-1 text-sm font-medium text-text-secondary">
         {stat.label}
       </p>
-      {stat.sub && <p className="text-[11px] opacity-50">{stat.sub}</p>}
+      {stat.sub && (
+        <p className="mt-0.5 text-xs text-text-tertiary">{stat.sub}</p>
+      )}
     </Card>
   );
 }
 
 /**
- * Skeuomorphic overview stat cards (#12): total applications, active
- * pipeline, interviews, offers, avg response days, response rate.
+ * Overview stat cards: total applications, active pipeline, interviews,
+ * offers, avg response days, response rate.
  *
  * Reads live numbers from GET /api/analytics. On 401 (signed out — e.g. the
  * public home page) renders a sign-in prompt instead of numbers.
@@ -77,23 +76,22 @@ export function OverviewStats() {
       );
   }, []);
 
-  // Public page, no session — invite to the tracker instead of numbers.
   if (signedOut) {
     return (
-      <Card material="leather" framed className="flex flex-wrap items-center justify-between gap-4">
+      <Card className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="font-display text-lg font-bold text-paper-light">
-            🗂️ Your overview, at a glance
+          <h2 className="text-lg font-bold text-text-primary">
+            Your overview, at a glance
           </h2>
-          <p className="mt-1 text-sm text-paper-light/75">
+          <p className="mt-1 text-sm text-text-secondary">
             Applications, pipelines, interviews, offers and response rates —
             live from your tracker.{" "}
-            <span className="text-paper-light/60">(Requires sign-in.)</span>
+            <span className="text-text-tertiary">(Requires sign-in.)</span>
           </p>
         </div>
         <Link
           href="/login"
-          className="rounded-md border-2 border-b-4 border-brass-dark bg-gradient-to-b from-brass-light to-brass px-4 py-2 text-sm font-semibold text-ink shadow-bevel-sm transition active:translate-y-px active:border-b-2"
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-all duration-150 hover:bg-accent-hover active:scale-[0.98]"
         >
           Sign in
         </Link>
@@ -103,15 +101,15 @@ export function OverviewStats() {
 
   if (error) {
     return (
-      <Card className="text-sm text-blood-dark" role="alert">
-        ⚠️ Could not load overview: {error}
+      <Card className="text-sm text-error" role="alert">
+        Could not load overview: {error}
       </Card>
     );
   }
   if (!data) {
     return (
-      <Card className="text-sm opacity-70">
-        🗂️ Loading overview…
+      <Card className="text-sm text-text-secondary">
+        Loading overview…
       </Card>
     );
   }
@@ -148,8 +146,8 @@ export function OverviewStats() {
 
   return (
     <section className="mt-8">
-      <h2 className="font-display text-lg font-bold text-engraved">
-        🗂️ Overview
+      <h2 className="text-lg font-bold text-text-primary">
+        Overview
       </h2>
       <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         {stats.map((s) => (

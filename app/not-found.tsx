@@ -1,24 +1,24 @@
 import Link from "next/link";
 import { Button, Card } from "@/components/ui";
 
-/** Skeuomorphic 404 — the page slipped off the desk. */
 export default function NotFound() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-6 p-8">
-      <Card material="wood" framed className="w-full text-center shadow-bevel-lg">
-        <p className="font-display text-6xl font-bold text-engraved">404 🦉</p>
-        <h1 className="mt-2 font-display text-xl font-bold text-ink">
-          This page slipped off the desk
-        </h1>
-        <p className="mt-1 text-sm opacity-70">
-          The link may be outdated, or the page was moved to another drawer.
+    <main className="flex min-h-dvh items-center justify-center py-16">
+      <Card className="w-full max-w-sm text-center">
+        <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-elevated text-4xl">
+          🦉
+        </div>
+        <h1 className="text-2xl font-bold text-text-primary">404</h1>
+        <p className="mt-1 text-sm text-text-secondary">
+          This page slipped off the desk.
+          The link may be outdated, or the page was moved.
         </p>
-        <div className="mt-4 flex justify-center gap-2">
+        <div className="mt-5 flex justify-center gap-2">
           <Link href="/">
-            <Button variant="leather">← Back home</Button>
+            <Button variant="primary">← Back home</Button>
           </Link>
           <Link href="/dashboard">
-            <Button variant="brass">🗂️ Dashboard</Button>
+            <Button variant="secondary">Dashboard</Button>
           </Link>
         </div>
       </Card>

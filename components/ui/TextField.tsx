@@ -6,8 +6,8 @@ interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 /**
- * Recessed, ledger-style input: the field is carved into the desk
- * (inset shadow), focus lifts it with a brass rim.
+ * Clean, flat text input. Border by default, ring + accent on focus.
+ * Label uses secondary text, hint uses tertiary.
  */
 export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
   ({ label, hint, id, className = "", ...props }, ref) => {
@@ -17,7 +17,7 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="text-xs font-semibold uppercase tracking-wider text-ink-soft"
+            className="text-sm font-medium text-text-secondary"
           >
             {label}
           </label>
@@ -25,10 +25,10 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
         <input
           ref={ref}
           id={inputId}
-          className={`w-full rounded-md border border-ink/30 bg-ink/10 px-3 py-2 text-sm text-ink shadow-engraved outline-none transition placeholder:text-ink-faint focus:border-brass focus:bg-paper-light/60 focus:ring-2 focus:ring-brass/30 ${className}`}
+          className={`w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none transition-all duration-150 ease-out placeholder:text-text-tertiary focus:border-accent focus:ring-2 focus:ring-accent/30 ${className}`}
           {...props}
         />
-        {hint && <p className="text-xs text-ink-faint">{hint}</p>}
+        {hint && <p className="text-xs text-text-tertiary">{hint}</p>}
       </div>
     );
   }

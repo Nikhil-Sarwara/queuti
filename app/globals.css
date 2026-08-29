@@ -3,160 +3,90 @@
 @tailwind utilities;
 
 /* =====================================================================
-   Queuti design tokens (#31) — every color + shadow is a CSS variable so
-   the whole skeuomorphic system can re-theme with one `data-theme`
-   attribute on <html>. Values are RGB triplets (used as
-   `rgb(var(--x) / <alpha-value>)` so Tailwind opacity modifiers keep
-   working). Three themes: paper (default, light), dark (leather-toned),
-   midnight (cool near-black).
+   Queuti Design System v2 — Warm Minimalism
+   Two themes: light (default) and dark via data-theme attribute on <html>.
+   All tokens are CSS custom properties resolved as hex values for the
+   Tailwind palette, with shadow/border/radius helpers.
    ===================================================================== */
 
 :root,
-[data-theme="paper"] {
-  /* paper / ink */
-  --paper-light: 246 240 226;
-  --paper: 236 228 212;
-  --paper-dark: 221 211 189;
-  --ink: 43 33 23;
-  --ink-soft: 92 77 58;
-  --ink-faint: 138 122 99;
+[data-theme="light"] {
+  /* Background & surfaces (RGB triplets for Tailwind alpha support) */
+  --bg: 250 250 248;
+  --surface: 255 255 255;
+  --surface-warm: 248 246 242;
+  --elevated: 245 245 243;
 
-  /* accents */
-  --leather-100: 233 217 196;
-  --leather-200: 211 180 147;
-  --leather-300: 181 134 90;
-  --leather-400: 150 102 63;
-  --leather-500: 122 84 52;
-  --leather-600: 107 74 47;
-  --leather-700: 84 58 37;
-  --leather-800: 63 43 27;
-  --leather-900: 43 29 18;
-  --leather: 107 74 47;
-  --wood-light: 201 160 107;
-  --wood: 169 124 77;
-  --wood-dark: 125 90 54;
-  --brass-light: 226 194 84;
-  --brass: 201 162 39;
-  --brass-dark: 168 134 31;
-  --blood-light: 176 74 58;
-  --blood: 142 59 46;
-  --blood-dark: 110 44 34;
-  --moss-light: 116 134 79;
-  --moss: 90 107 60;
-  --moss-dark: 70 84 46;
+  /* Text */
+  --text-primary: 26 26 26;
+  --text-secondary: 107 107 107;
+  --text-tertiary: 158 158 158;
 
-  /* bevel/pressed/engraved shadows — highlight + dark inset + drop */
-  --sh-hi: rgba(255, 255, 255, 0.5);
-  --sh-hi-strong: rgba(255, 255, 255, 0.6);
-  --sh-lo: rgba(0, 0, 0, 0.28);
-  --sh-lo-strong: rgba(0, 0, 0, 0.32);
-  --sh-drop: rgba(0, 0, 0, 0.22);
-  --sh-drop-lg: rgba(0, 0, 0, 0.3);
-  --engrave-hi: rgba(255, 255, 255, 0.45);
-  --engrave-lo: rgba(0, 0, 0, 0.25);
+  /* Accent (indigo) */
+  --accent: 91 95 199;
+  --accent-hover: 74 78 181;
 
-  /* charts + progress tracks (MarketIntel, AnalyticsDashboard) */
-  --graph-grid: 221 211 189;
-  --graph-tip-bg: 246 240 226;
-  --graph-tip-border: 168 134 31;
-  --graph-cursor: rgba(201, 162, 39, 0.12);
-  --track-inset: rgba(43, 33, 23, 0.35);
+  /* Semantic */
+  --success: 46 125 50;
+  --warning: 237 108 2;
+  --error: 211 47 47;
+  --info: 2 136 209;
+
+  /* Border */
+  --border: 232 232 230;
+  --border-subtle: 240 240 238;
+
+  /* Shadows (light) */
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-2: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-3: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+
+  /* Charts / progress */
+  --graph-grid: 232 232 230;
+  --graph-tip-bg: 250 250 248;
+  --graph-tip-border: 91 95 199;
+  --graph-cursor: rgba(91, 95, 199, 0.12);
 }
 
 [data-theme="dark"] {
-  --paper-light: 58 47 35;
-  --paper: 49 39 28;
-  --paper-dark: 40 31 22;
-  --ink: 236 228 212;
-  --ink-soft: 207 194 168;
-  --ink-faint: 168 152 126;
+  /* Background & surfaces (RGB triplets for Tailwind alpha support) */
+  --bg: 18 18 18;
+  --surface: 30 30 30;
+  --surface-warm: 26 26 26;
+  --elevated: 42 42 42;
 
-  --leather-100: 60 48 36;
-  --leather-200: 74 58 43;
-  --leather-300: 92 70 50;
-  --leather-400: 110 84 58;
-  --leather-500: 128 98 68;
-  --leather-600: 120 90 62;
-  --leather-700: 94 70 48;
-  --leather-800: 68 49 33;
-  --leather-900: 46 33 22;
-  --leather: 120 90 62;
-  --wood-light: 181 142 94;
-  --wood: 150 112 74;
-  --wood-dark: 107 80 48;
-  --brass-light: 216 184 74;
-  --brass: 201 162 39;
-  --brass-dark: 168 134 31;
-  --blood-light: 192 90 72;
-  --blood: 160 67 50;
-  --blood-dark: 124 51 38;
-  --moss-light: 139 160 95;
-  --moss: 111 130 71;
-  --moss-dark: 86 102 58;
+  /* Text */
+  --text-primary: 232 232 232;
+  --text-secondary: 160 160 160;
+  --text-tertiary: 107 107 107;
 
-  --sh-hi: rgba(255, 255, 255, 0.08);
-  --sh-hi-strong: rgba(255, 255, 255, 0.12);
-  --sh-lo: rgba(0, 0, 0, 0.5);
-  --sh-lo-strong: rgba(0, 0, 0, 0.55);
-  --sh-drop: rgba(0, 0, 0, 0.45);
-  --sh-drop-lg: rgba(0, 0, 0, 0.55);
-  --engrave-hi: rgba(255, 255, 255, 0.12);
-  --engrave-lo: rgba(0, 0, 0, 0.6);
+  /* Accent (lighter indigo for dark) */
+  --accent: 139 143 231;
+  --accent-hover: 159 165 236;
 
-  --graph-grid: 74 62 46;
-  --graph-tip-bg: 58 47 35;
-  --graph-tip-border: 168 134 31;
-  --graph-cursor: rgba(201, 162, 39, 0.16);
-  --track-inset: rgba(0, 0, 0, 0.5);
+  /* Semantic */
+  --success: 102 187 106;
+  --warning: 255 167 38;
+  --error: 239 83 80;
+  --info: 41 182 246;
+
+  /* Border */
+  --border: 51 51 51;
+  --border-subtle: 42 42 42;
+
+  /* Shadows (dark — stronger) */
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-2: 0 4px 6px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.25);
+  --shadow-3: 0 10px 15px rgba(0, 0, 0, 0.5), 0 4px 6px rgba(0, 0, 0, 0.3);
+
+  /* Charts / progress */
+  --graph-grid: 51 51 51;
+  --graph-tip-bg: 30 30 30;
+  --graph-tip-border: 139 143 231;
+  --graph-cursor: rgba(139, 143, 231, 0.16);
 }
 
-[data-theme="midnight"] {
-  --paper-light: 25 29 38;
-  --paper: 20 24 32;
-  --paper-dark: 16 19 26;
-  --ink: 219 226 238;
-  --ink-soft: 169 180 198;
-  --ink-faint: 124 135 153;
-
-  --leather-100: 40 44 56;
-  --leather-200: 52 57 72;
-  --leather-300: 66 72 90;
-  --leather-400: 82 89 110;
-  --leather-500: 100 108 132;
-  --leather-600: 92 100 122;
-  --leather-700: 70 76 96;
-  --leather-800: 48 53 68;
-  --leather-900: 32 35 46;
-  --leather: 92 100 122;
-  --wood-light: 147 112 76;
-  --wood: 119 96 63;
-  --wood-dark: 87 69 44;
-  --brass-light: 212 182 78;
-  --brass: 201 162 39;
-  --brass-dark: 143 113 23;
-  --blood-light: 192 90 72;
-  --blood: 160 67 50;
-  --blood-dark: 124 51 38;
-  --moss-light: 139 160 95;
-  --moss: 111 130 71;
-  --moss-dark: 86 102 58;
-
-  --sh-hi: rgba(255, 255, 255, 0.07);
-  --sh-hi-strong: rgba(255, 255, 255, 0.11);
-  --sh-lo: rgba(0, 0, 0, 0.55);
-  --sh-lo-strong: rgba(0, 0, 0, 0.6);
-  --sh-drop: rgba(0, 0, 0, 0.5);
-  --sh-drop-lg: rgba(0, 0, 0, 0.6);
-  --engrave-hi: rgba(255, 255, 255, 0.1);
-  --engrave-lo: rgba(0, 0, 0, 0.65);
-
-  --graph-grid: 43 50 66;
-  --graph-tip-bg: 25 29 38;
-  --graph-tip-border: 143 113 23;
-  --graph-cursor: rgba(201, 162, 39, 0.16);
-  --track-inset: rgba(0, 0, 0, 0.55);
-}
-
+/* ---- Toast animation ---- */
 @keyframes queutiToastIn {
   from {
     opacity: 0;
@@ -168,50 +98,92 @@
   }
 }
 
-/* keyboard focus: brass rim everywhere */
+/* ---- Global focus-visible ring using accent color ---- */
 :focus-visible {
-  outline: 2px solid rgb(var(--brass));
+  outline: 2px solid rgb(var(--accent));
   outline-offset: 2px;
   border-radius: 4px;
 }
 
+/* ---- Smooth scroll ---- */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ---- Base body ---- */
 body {
-  @apply text-ink antialiased;
+  @apply antialiased;
   min-height: 100vh;
-  background:
-    radial-gradient(1200px 800px at 15% -10%, rgb(var(--brass) / 0.12), transparent 60%),
-    radial-gradient(1000px 700px at 110% 25%, rgb(var(--leather-500) / 0.16), transparent 55%),
-    linear-gradient(160deg, rgb(var(--paper-light) / 1), rgb(var(--paper) / 1) 45%, rgb(var(--paper-dark) / 1));
-  background-attachment: fixed;
+  background-color: rgb(var(--bg));
+  color: rgb(var(--text-primary));
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
 }
 
-/* ---- material textures (SVG turbulence grain, overlaid on gradients) ---- */
-.texture-leather {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.28'/%3E%3C/svg%3E");
-}
-.texture-paper {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E");
-}
-.texture-wood {
-  background-image:
-    repeating-linear-gradient(
-      92deg,
-      rgba(0, 0, 0, 0.1) 0 2px,
-      transparent 2px 9px,
-      rgba(255, 255, 255, 0.05) 9px 11px,
-      transparent 11px 22px
-    ),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.05 0.5' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E");
+/* ---- Reduced motion: kill all transitions and animations ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
-/* ---- typography treatments ---- */
-.text-engraved {
-  text-shadow:
-    0 1px 0 var(--engrave-hi),
-    0 -1px 1px var(--engrave-lo);
+/* ---- Fluid typography utilities ---- */
+.text-fluid-display {
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2.25rem);
+  font-weight: 700;
+  line-height: 1.2;
 }
-.text-embossed {
-  text-shadow:
-    0 -1px 0 var(--engrave-hi),
-    0 1px 1px var(--engrave-lo);
+
+.text-fluid-h2 {
+  font-size: clamp(1.25rem, 1rem + 0.75vw, 1.875rem);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.text-fluid-h3 {
+  font-size: clamp(1.125rem, 0.95rem + 0.5vw, 1.5rem);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.text-fluid-body {
+  font-size: clamp(0.9375rem, 0.875rem + 0.25vw, 1rem);
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.text-fluid-small {
+  font-size: clamp(0.8125rem, 0.75rem + 0.25vw, 0.875rem);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+/* ---- Bento grid utilities ---- */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.bento-grid-dense {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  grid-auto-flow: dense;
+}
+
+/* ---- Container query support (progressive) ---- */
+@supports (container-type: inline-size) {
+  .cq-card {
+    container-type: inline-size;
+  }
+}
+
+/* ---- Page padding utility ---- */
+.page-padding {
+  padding: clamp(1rem, 0.5rem + 2vw, 2rem);
 }

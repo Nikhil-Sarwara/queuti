@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Card, TextField, Button } from "@/components/ui";
 
-/** Reset form — token arrives via ?token= in the reset email link. */
 function ResetForm() {
   const router = useRouter();
   const params = useSearchParams();
@@ -43,16 +42,23 @@ function ResetForm() {
   }
 
   return (
-    <Card>
-      <h1 className="text-xl font-bold">🔑 Choose a new password</h1>
-      <p className="mt-1 text-xs opacity-70">
-        {done
-          ? "Password updated — taking you to sign in…"
-          : "Pick a new password for your Queuti account."}
-      </p>
+    <Card className="w-full max-w-sm">
+      <div className="mb-6 text-center">
+        <Link href="/" className="inline-block text-2xl font-bold text-text-primary">
+          Queuti <span className="text-accent">🦉</span>
+        </Link>
+        <h1 className="mt-4 text-xl font-bold text-text-primary">
+          {done ? "Password updated" : "Choose a new password"}
+        </h1>
+        <p className="mt-1 text-sm text-text-secondary">
+          {done
+            ? "Taking you to sign in…"
+            : "Pick a new password for your Queuti account."}
+        </p>
+      </div>
 
       {!done && (
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
+        <form onSubmit={onSubmit} className="space-y-4">
           <TextField
             label="New password"
             type="password"
@@ -71,17 +77,20 @@ function ResetForm() {
             required
           />
           {error && (
-            <p role="alert" className="rounded border-2 border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+            <p role="alert" className="rounded-lg border border-error/20 bg-error/5 px-3 py-2 text-sm text-error">
               {error}
             </p>
           )}
-          <Button type="submit" disabled={busy || !token}>
+          <Button type="submit" disabled={busy || !token} className="w-full">
             {busy ? "Saving…" : "Set new password"}
           </Button>
           {!token && (
-            <p className="text-xs opacity-60">
-              This link is missing its token — it may be truncated. Request a
-              fresh one from the forgot-password page.
+            <p className="text-center text-xs text-text-tertiary">
+              This link is missing its token. Request a fresh one from the{" "}
+              <Link href="/forgot-password" className="text-accent hover:text-accent-hover">
+                forgot password
+              </Link>{" "}
+              page.
             </p>
           )}
         </form>
@@ -92,13 +101,16 @@ function ResetForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <main className="mx-auto max-w-md px-6 py-16">
-      <Suspense fallback={<Card><p className="text-sm opacity-60">Loading…</p></Card>}>
+    <main className="flex min-h-dvh items-center justify-center py-16">
+      <Suspense
+        fallback={
+          <Card className="w-full max-w-sm">
+            <p className="text-center text-sm text-text-tertiary">Loading…</p>
+          </Card>
+        }
+      >
         <ResetForm />
       </Suspense>
-      <p className="mt-6 text-center text-xs opacity-50">
-        <Link href="/login">← Back to sign in</Link>
-      </p>
     </main>
   );
 }

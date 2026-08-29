@@ -5,17 +5,23 @@ import type { ToastMessage, ToastTone } from "@/lib/toast";
 
 const EVENT = "queuti:toast";
 
-const tones: Record<ToastTone, string> = {
-  success: "border-moss-dark/70 bg-gradient-to-b from-moss-light to-moss text-paper-light",
-  error: "border-blood-dark/70 bg-gradient-to-b from-blood-light to-blood text-paper-light",
-  info: "border-brass-dark/70 bg-gradient-to-b from-brass-light to-brass text-ink",
+const toneClasses: Record<ToastTone, string> = {
+  success: "bg-success/10 text-success border-success/20",
+  error: "bg-error/10 text-error border-error/20",
+  warning: "bg-warning/10 text-warning border-warning/20",
+  info: "bg-info/10 text-info border-info/20",
 };
 
-const icons: Record<ToastTone, string> = { success: "✅", error: "⚠️", info: "💡" };
+const icons: Record<ToastTone, string> = {
+  success: "✓",
+  error: "✕",
+  warning: "!",
+  info: "i",
+};
 
 /**
- * Global toast stack (bottom-right, beveled leather desk lanyard style).
- * Mounted once in the root layout; any code can fire toasts via lib/toast.
+ * Global toast stack — slides in from top-right.
+ * Clean card styling, no bevels. Mounted once in the root layout.
  */
 export function Toaster() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -23,10 +29,10 @@ export function Toaster() {
   useEffect(() => {
     const onToast = (e: Event) => {
       const detail = (e as CustomEvent<ToastMessage>).detail;
-      setToasts((prev) => [...prev.slice(-3), detail]);
+      setToasts((prev) => [...prev.slice(-4), detail]);
       window.setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== detail.id));
-      }, 3800);
+      }, 4000);
     };
     window.addEventListener(EVENT, onToast);
     return () => window.removeEventListener(EVENT, onToast);
@@ -35,14 +41,19 @@ export function Toaster() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-[min(92vw,340px)] flex-col gap-2">
+    <div className="pointer-events-none fixed top-4 right-4 z-50 flex w-[min(92vw,360px)] flex-col gap-2">
       {toasts.map((t) => (
         <div
           key={t.id}
           role="status"
-          className={`pointer-events-auto flex items-start gap-2 rounded-md border-2 border-b-4 px-3 py-2 text-sm font-semibold shadow-bevel-lg animate-[queutiToastIn_.25s_ease-out] ${tones[t.tone]}`}
+          className={`pointer-events-auto flex items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium shadow-1 backdrop-blur-sm animate-[toastIn_300ms_ease-out] ${toneClasses[t.tone]}`}
         >
-          <span aria-hidden>{icons[t.tone]}</span>
+          <span
+            aria-hidden
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-current/10 text-xs font-bold"
+          >
+            {icons[t.tone]}
+          </span>
           <span className="min-w-0">{t.message}</span>
         </div>
       ))}

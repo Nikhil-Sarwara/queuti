@@ -19,12 +19,12 @@ export default async function ApplicationPage({
   return (
     <main className="mx-auto max-w-[900px] px-4 py-8 md:px-6">
       <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-bold text-engraved">
+        <h1 className=" text-2xl font-bold">
           🗂️ Application Details
         </h1>
         <Link
           href="/dashboard"
-          className="rounded-md border-2 border-b-4 border-blood-dark/70 bg-gradient-to-b from-blood-light to-blood px-4 py-2 text-sm font-semibold text-paper-light shadow-bevel-sm transition active:translate-y-px active:border-b-2"
+          className="rounded-md border border-error bg-error px-4 py-2 text-sm font-semibold text-surface transition active:translate-y-px "
         >
           ← Back to dashboard
         </Link>

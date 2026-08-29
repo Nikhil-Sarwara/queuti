@@ -89,11 +89,9 @@ function fmtDate(iso: string) {
 export function KanbanBoard() {
   const [apps, setApps] = useState<KanbanApp[]>([]);
   const [view, setView] = useState<"board" | "table" | "archived">("board");
-  // archived drawer (#26)
   const [archivedApps, setArchivedApps] = useState<KanbanApp[]>([]);
   const [archivedLoading, setArchivedLoading] = useState(false);
   const [restoringId, setRestoringId] = useState("");
-  // board filters (#20)
   const [hiddenStatuses, setHiddenStatuses] = useState<Set<AppStatus>>(new Set());
   const [companyQ, setCompanyQ] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -164,7 +162,7 @@ export function KanbanBoard() {
       );
       setApps((prev) => [application, ...prev]);
       setForm(EMPTY_FORM);
-      toast(`✅ Added ${application.title}`, "success");
+      toast(`Added ${application.title}`, "success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create");
     } finally {
@@ -184,7 +182,7 @@ export function KanbanBoard() {
         { method: "PATCH", body: JSON.stringify({ status: next }) }
       );
       setApps((prev) => prev.map((a) => (a._id === app._id ? application : a)));
-      toast(`↩️ Moved to ${next}`, "success");
+      toast(`Moved to ${next}`, "success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to move");
     } finally {
@@ -201,7 +199,7 @@ export function KanbanBoard() {
         body: JSON.stringify({ archived: false }),
       });
       setArchivedApps((prev) => prev.filter((a) => a._id !== app._id));
-      toast(`♻️ Restored ${app.title}`, "success");
+      toast(`Restored ${app.title}`, "success");
       load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to restore");
@@ -217,7 +215,7 @@ export function KanbanBoard() {
     try {
       await api(`/api/applications/${app._id}`, { method: "DELETE" });
       setApps((prev) => prev.filter((a) => a._id !== app._id));
-      toast(`🗃️ Archived ${app.title}`, "success");
+      toast(`Archived ${app.title}`, "success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to archive");
     } finally {
@@ -241,11 +239,11 @@ export function KanbanBoard() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || `Import failed (${res.status})`);
       setImportResult(
-        `✅ Imported ${data.imported}, skipped ${data.skipped} exact duplicate${data.duplicates ? ", flagged " + data.duplicates + " duplicate" + (data.duplicates === 1 ? "" : "s") : ""}${data.invalid ? ", " + data.invalid + " invalid" : ""}.`
+        `Imported ${data.imported}, skipped ${data.skipped} exact duplicate${data.duplicates ? ", flagged " + data.duplicates + " duplicate" + (data.duplicates === 1 ? "" : "s") : ""}${data.invalid ? ", " + data.invalid + " invalid" : ""}.`
       );
       setImportErrors(data.errors || []);
       setImportDupes(data.duplicateMessages || []);
-      toast(`📥 Imported ${data.imported} application${data.imported === 1 ? "" : "s"} from CSV`, "success");
+      toast(`Imported ${data.imported} application${data.imported === 1 ? "" : "s"} from CSV`, "success");
       load();
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to import";
@@ -323,7 +321,6 @@ export function KanbanBoard() {
   else if (boardSort === "updated-desc") visibleSorted.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   else if (boardSort === "followup") {
     visibleSorted.sort((a, b) => {
-      // Follow-ups first, most overdue on top, then by date applied.
       if (a.needsFollowUp !== b.needsFollowUp) return a.needsFollowUp ? -1 : 1;
       return a.dateApplied.localeCompare(b.dateApplied);
     });
@@ -341,10 +338,10 @@ export function KanbanBoard() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* ---- Add application (brass ledger card) ---- */}
-      <Card material="leather" framed className="shadow-bevel-lg">
-        <h2 className="font-display text-lg font-bold text-paper-light text-embossed">
-          ✒️ New Application
+      {/* ---- Add application ---- */}
+      <Card>
+        <h2 className="text-lg font-bold text-text-primary">
+          New Application
         </h2>
         <form onSubmit={createApp} className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
           <div className="col-span-2 md:col-span-1">
@@ -369,35 +366,35 @@ export function KanbanBoard() {
             <TextField label="Notes" name="notes" value={form.notes} onChange={(e) => set("notes")(e.target.value)} placeholder="Cover letter sent, referral…" />
           </div>
           <div className="col-span-2 flex items-end justify-end">
-            <Button type="submit" variant="brass" size="lg" disabled={submitting || !form.title.trim()}>
-              {submitting ? "Saving…" : "➕ Add Application"}
+            <Button type="submit" variant="primary" size="lg" disabled={submitting || !form.title.trim()}>
+              {submitting ? "Saving…" : "Add Application"}
             </Button>
           </div>
         </form>
       </Card>
 
       {error && (
-        <Card material="paper" className="border-blood/60 shadow-bevel-sm" role="alert">
-          <p className="text-sm font-semibold text-blood">⚠️ {error}</p>
+        <Card className="border-error/20" role="alert">
+          <p className="text-sm font-semibold text-error">{error}</p>
         </Card>
       )}
 
-      {/* ---- CSV import + export (desk drawer) ---- */}
-      <Card material="wood" framed className="shadow-bevel">
+      {/* ---- CSV import & export ---- */}
+      <Card>
         <details open={false}>
-          <summary className="cursor-pointer select-none font-display text-base font-bold text-ink text-engraved">
-            📥 CSV import & 📤 export (jobhunt-applications.csv)
+          <summary className="cursor-pointer select-none text-base font-bold text-text-primary">
+            CSV import & export (jobhunt-applications.csv)
           </summary>
           <div className="mt-3 flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-3">
               <a
                 href="/api/applications/export"
-                className="rounded-md border-2 border-b-4 border-moss-dark bg-gradient-to-b from-moss-light to-moss px-3 py-1.5 text-xs font-bold text-paper-light shadow-bevel-sm transition active:translate-y-px active:border-b-2"
+                className="rounded-lg border border-success bg-success px-3 py-1.5 text-xs font-bold text-white transition-all duration-150 hover:bg-success/90 active:scale-[0.98]"
               >
-                📤 Export my applications (CSV)
+                Export applications (CSV)
               </a>
-              <Button type="button" variant="paper" size="sm" onClick={downloadTemplate}>
-                📄 Download template CSV
+              <Button type="button" variant="secondary" size="sm" onClick={downloadTemplate}>
+                Download template CSV
               </Button>
             </div>
 
@@ -409,14 +406,14 @@ export function KanbanBoard() {
               }}
               onDragLeave={() => setDragging(false)}
               onDrop={onDrop}
-              className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed px-4 py-6 text-center transition ${
+              className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed px-4 py-6 text-center transition-all duration-150 ${
                 dragging
-                  ? "border-brass bg-brass/15 shadow-bevel-sm"
-                  : "border-brass/50 bg-paper-dark/30 hover:border-brass hover:bg-brass/5"
+                  ? "border-accent bg-accent/10"
+                  : "border-border-subtle bg-elevated hover:border-accent/50 hover:bg-accent/5"
               }`}
             >
-              <label className="cursor-pointer text-sm font-semibold text-ink">
-                {dragging ? "🪂 Drop it!" : "📁 Drag & drop your CSV here"}
+              <label className="cursor-pointer text-sm font-semibold text-text-primary">
+                {dragging ? "Drop it!" : "Drag & drop your CSV here"}
                 <input
                   type="file"
                   accept=".csv,text/csv"
@@ -424,7 +421,7 @@ export function KanbanBoard() {
                   className="sr-only"
                 />
               </label>
-              <p className="text-[11px] opacity-60">or click to choose a file (date,title,company,apply_url,hiring_email) — imports run automatically, exact duplicates are skipped, company+title duplicates are flagged</p>
+              <p className="text-xs text-text-tertiary">or click to choose a file (date,title,company,apply_url,hiring_email) — exact duplicates are skipped, company+title duplicates are flagged</p>
             </div>
 
             <textarea
@@ -433,25 +430,25 @@ export function KanbanBoard() {
               rows={5}
               aria-label="Paste CSV data"
               placeholder={"…or paste CSV here:\ndate,title,company,apply_url,hiring_email\n2026-08-16,Software Engineer,Acme,https://acme.com/job,hr@acme.com"}
-              className="w-full rounded-md border border-ink/30 bg-ink/10 px-3 py-2 font-mono text-xs text-ink shadow-engraved outline-none transition placeholder:text-ink-faint focus:border-brass focus:bg-paper-light/60 focus:ring-2 focus:ring-brass/30"
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 font-mono text-xs text-text-primary outline-none transition-all duration-150 placeholder:text-text-tertiary focus:border-accent focus:ring-2 focus:ring-accent/30"
             />
             <div className="flex flex-wrap items-center gap-3">
-              <Button type="button" variant="brass" onClick={importCsv} disabled={importing || !csvText.trim()}>
-                {importing ? "Importing…" : "🚚 Import pasted CSV"}
+              <Button type="button" variant="primary" onClick={importCsv} disabled={importing || !csvText.trim()}>
+                {importing ? "Importing…" : "Import pasted CSV"}
               </Button>
-              {importResult && <p className="text-sm font-semibold text-moss-dark">{importResult}</p>}
+              {importResult && <p className="text-sm font-semibold text-success">{importResult}</p>}
             </div>
             {importErrors.length > 0 && (
-              <ul className="max-h-40 overflow-y-auto rounded-md border border-blood/40 bg-blood/10 p-2.5 text-xs text-blood-dark" role="alert">
+              <ul className="max-h-40 overflow-y-auto rounded-lg border border-error/40 bg-error/10 p-2.5 text-xs text-error" role="alert">
                 {importErrors.map((msg, i) => (
-                  <li key={i} className="font-mono">⚠️ {msg}</li>
+                  <li key={i} className="font-mono">{msg}</li>
                 ))}
               </ul>
             )}
             {importDupes.length > 0 && (
-              <ul className="max-h-40 overflow-y-auto rounded-md border border-brass/50 bg-brass/10 p-2.5 text-xs text-brass-dark">
+              <ul className="max-h-40 overflow-y-auto rounded-lg border border-accent/50 bg-accent/10 p-2.5 text-xs text-accent">
                 {importDupes.map((msg, i) => (
-                  <li key={i} className="font-mono">🔁 {msg}</li>
+                  <li key={i} className="font-mono">{msg}</li>
                 ))}
               </ul>
             )}
@@ -463,20 +460,20 @@ export function KanbanBoard() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6" aria-busy="true" aria-label="Loading board">
           {STATUSES.map((s) => (
             <div key={s} className="flex flex-col gap-2">
-              <div className={`h-8 animate-pulse rounded-md border border-ink/15 ${COLUMN_META[s].cls} opacity-40`} />
+              <div className={`h-8 animate-pulse rounded-lg border border-border-subtle bg-elevated ${COLUMN_META[s].cls} opacity-40`} />
               {[0, 1, 2].map((i) => (
-                <div key={i} className="h-28 animate-pulse rounded-lg border border-ink/10 bg-paper-dark/50 shadow-engraved" />
+                <div key={i} className="h-28 animate-pulse rounded-lg border border-border-subtle bg-elevated" />
               ))}
             </div>
           ))}
         </div>
       ) : apps.length === 0 ? (
-        <Card material="leather" framed className="shadow-bevel-lg text-center">
-          <p className="font-display text-lg font-bold text-paper-light text-embossed">
-            📭 Your tracker is empty
+        <Card className="text-center">
+          <p className="text-lg font-bold text-text-primary">
+            Your tracker is empty
           </p>
-          <p className="mx-auto mt-2 max-w-md text-sm text-paper-light/75">
-            Add your first application in the leather card above, or drag your{" "}
+          <p className="mx-auto mt-2 max-w-md text-sm text-text-secondary">
+            Add your first application in the form above, or drag your
             jobhunt-applications.csv into the import drawer — the kanban, ledger,
             analytics and market intelligence will fill up from there.
           </p>
@@ -485,45 +482,24 @@ export function KanbanBoard() {
         <>
           {/* board / ledger / archive toggle */}
           <div className="flex items-center justify-between gap-3">
-            <div className="inline-flex rounded-md border border-ink/25 bg-gradient-to-b from-wood-light/70 to-wood/70 p-1 shadow-engraved">
-              <button
-                type="button"
-                onClick={() => setView("board")}
-                aria-pressed={view === "board"}
-                className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
-                  view === "board"
-                    ? "border border-b-2 border-brass-dark bg-gradient-to-b from-brass-light to-brass text-ink shadow-bevel-sm"
-                    : "text-ink-soft hover:text-ink"
-                }`}
-              >
-                🎴 Board
-              </button>
-              <button
-                type="button"
-                onClick={() => setView("table")}
-                aria-pressed={view === "table"}
-                className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
-                  view === "table"
-                    ? "border border-b-2 border-brass-dark bg-gradient-to-b from-brass-light to-brass text-ink shadow-bevel-sm"
-                    : "text-ink-soft hover:text-ink"
-                }`}
-              >
-                📋 Ledger
-              </button>
-              <button
-                type="button"
-                onClick={() => setView("archived")}
-                aria-pressed={view === "archived"}
-                className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
-                  view === "archived"
-                    ? "border border-b-2 border-brass-dark bg-gradient-to-b from-brass-light to-brass text-ink shadow-bevel-sm"
-                    : "text-ink-soft hover:text-ink"
-                }`}
-              >
-                🗃️ Archived
-              </button>
+            <div className="inline-flex rounded-lg border border-border bg-elevated p-1">
+              {(["board", "table", "archived"] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setView(v)}
+                  aria-pressed={view === v}
+                  className={`rounded-md px-3 py-1.5 text-xs font-bold transition-all duration-150 ${
+                    view === v
+                      ? "bg-accent text-white shadow-1"
+                      : "text-text-secondary hover:text-text-primary"
+                  }`}
+                >
+                  {v === "board" ? "Board" : v === "table" ? "Ledger" : "Archived"}
+                </button>
+              ))}
             </div>
-            <p className="hidden text-xs uppercase tracking-wider opacity-50 sm:block">
+            <p className="hidden text-xs text-text-tertiary sm:block">
               {view === "board"
                 ? "← → to move applications between stages"
                 : view === "archived"
@@ -533,21 +509,21 @@ export function KanbanBoard() {
           </div>
 
           {view === "archived" ? (
-            <Card material="paper" framed className="shadow-bevel-sm">
-              <h3 className="font-display text-base font-bold text-engraved">
-                🗃️ Archived applications
+            <Card>
+              <h3 className="text-base font-bold text-text-primary">
+                Archived applications
               </h3>
-              <p className="mt-1 text-xs opacity-60">
+              <p className="mt-1 text-xs text-text-secondary">
                 Archived rows are hidden from the board, ledger and analytics — restore them any time.
               </p>
               {archivedLoading ? (
                 <div className="mt-3 flex flex-col gap-2">
                   {[0, 1, 2].map((i) => (
-                    <div key={i} className="h-14 animate-pulse rounded-md border border-ink/10 bg-paper-dark/50 shadow-engraved" />
+                    <div key={i} className="h-14 animate-pulse rounded-lg border border-border-subtle bg-elevated" />
                   ))}
                 </div>
               ) : archivedApps.length === 0 ? (
-                <p className="mt-3 rounded-md border border-ink/15 bg-paper-dark/30 p-4 text-center text-sm italic opacity-60">
+                <p className="mt-3 rounded-lg border border-border-subtle bg-elevated p-4 text-center text-sm italic text-text-tertiary">
                   Nothing archived yet — use the ✕ on a board card to file it away.
                 </p>
               ) : (
@@ -555,35 +531,35 @@ export function KanbanBoard() {
                   {archivedApps.map((a) => (
                     <li
                       key={a._id}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-ink/15 bg-paper-dark/40 p-2.5 shadow-engraved"
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border-subtle bg-elevated p-3"
                     >
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-ink">
+                        <p className="text-sm font-bold text-text-primary">
                           <Link
                             href={`/applications/${a._id}`}
-                            className="underline-offset-2 hover:text-brass-dark hover:underline"
+                            className="underline-offset-2 hover:text-accent hover:underline"
                           >
                             {a.title}
                           </Link>
                           {a.companyName && (
-                            <span className="ml-1.5 font-semibold text-ink-soft">at {a.companyName}</span>
+                            <span className="ml-1.5 font-semibold text-text-secondary">at {a.companyName}</span>
                           )}
                         </p>
-                        <p className="mt-0.5 text-[11px] opacity-60">
-                          🗓 {fmtDate(a.dateApplied)}
-                          {a.archivedAt && <> · 🗃️ archived {fmtDate(a.archivedAt)}</>}
+                        <p className="mt-0.5 text-xs text-text-tertiary">
+                          {fmtDate(a.dateApplied)}
+                          {a.archivedAt && <> · archived {fmtDate(a.archivedAt)}</>}
                           {a.source && <> · <span className="uppercase">{a.source}</span></>}
                         </p>
                       </div>
                       <Button
                         type="button"
-                        variant="brass"
+                        variant="primary"
                         size="sm"
                         disabled={restoringId === a._id}
                         onClick={() => restore(a)}
                         title="Restore to active tracker"
                       >
-                        ♻️ Restore
+                        Restore
                       </Button>
                     </li>
                   ))}
@@ -594,10 +570,10 @@ export function KanbanBoard() {
             <ApplicationsTable apps={apps} onRefresh={load} />
           ) : (
             <>
-              {/* board filter bar (#20) */}
-              <Card material="paper" framed className="shadow-bevel-sm">
+              {/* board filter bar */}
+              <Card>
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="mr-1 text-[11px] font-bold uppercase tracking-wider text-ink-soft">
+                  <span className="mr-1 text-xs font-bold uppercase tracking-wider text-text-secondary">
                     Stages:
                   </span>
                   {STATUSES.map((s) => (
@@ -607,9 +583,9 @@ export function KanbanBoard() {
                       onClick={() => toggleStatus(s)}
                       aria-pressed={!hiddenStatuses.has(s)}
                       title={hiddenStatuses.has(s) ? `Show ${COLUMN_META[s].label}` : `Hide ${COLUMN_META[s].label}`}
-                      className={`rounded-full border px-2.5 py-1 text-[11px] font-bold shadow-bevel-sm transition ${
+                      className={`rounded-full border px-2.5 py-1 text-xs font-bold transition-all duration-150 ${
                         hiddenStatuses.has(s)
-                          ? "border-ink/20 bg-paper-dark/60 text-ink-faint opacity-60 line-through"
+                          ? "border-border-subtle bg-elevated text-text-tertiary opacity-60 line-through"
                           : COLUMN_META[s].cls
                       }`}
                     >
@@ -628,19 +604,19 @@ export function KanbanBoard() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-ink-soft">From</label>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary">From</label>
                     <input
                       type="date"
-                      className="mt-1.5 w-full rounded-md border border-ink/30 bg-ink/10 px-2.5 py-2 text-sm text-ink shadow-engraved outline-none transition focus:border-brass focus:bg-paper-light/60 focus:ring-2 focus:ring-brass/30"
+                      className="mt-1.5 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none transition-all duration-150 focus:border-accent focus:ring-2 focus:ring-accent/30"
                       value={dateFrom}
                       onChange={(e) => setDateFrom(e.target.value)}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-ink-soft">To</label>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary">To</label>
                     <input
                       type="date"
-                      className="mt-1.5 w-full rounded-md border border-ink/30 bg-ink/10 px-2.5 py-2 text-sm text-ink shadow-engraved outline-none transition focus:border-brass focus:bg-paper-light/60 focus:ring-2 focus:ring-brass/30"
+                      className="mt-1.5 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none transition-all duration-150 focus:border-accent focus:ring-2 focus:ring-accent/30"
                       value={dateTo}
                       onChange={(e) => setDateTo(e.target.value)}
                     />
@@ -648,129 +624,130 @@ export function KanbanBoard() {
                 </div>
                 <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-ink-soft">Sort</label>
+                    <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">Sort</label>
                     <select
-                      className="rounded-md border border-ink/30 bg-ink/10 px-2.5 py-2 text-sm text-ink shadow-engraved outline-none transition focus:border-brass focus:bg-paper-light/60 focus:ring-2 focus:ring-brass/30"
+                      className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none transition-all duration-150 focus:border-accent focus:ring-2 focus:ring-accent/30"
                       value={boardSort}
                       onChange={(e) => setBoardSort(e.target.value as typeof boardSort)}
                     >
                       <option value="date-desc">Date applied (newest)</option>
                       <option value="updated-desc">Updated (newest)</option>
                       <option value="updated-asc">Updated (oldest)</option>
-                      <option value="followup">⏰ Follow-ups first</option>
+                      <option value="followup">Follow-ups first</option>
                     </select>
                   </div>
                   <div className="flex items-center gap-2">
                     {filtersActive && (
-                      <Button type="button" variant="paper" size="sm" onClick={resetFilters}>
-                        ↺ Reset filters
+                      <Button type="button" variant="secondary" size="sm" onClick={resetFilters}>
+                        Reset filters
                       </Button>
                     )}
-                    <span className="text-[11px] uppercase tracking-wider opacity-60">
+                    <span className="text-xs text-text-tertiary">
                       {visible.length} of {apps.length} shown
                     </span>
                   </div>
                 </div>
               </Card>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          {STATUSES.filter((s) => !hiddenStatuses.has(s)).map((s) => (
-            <div key={s} className="flex flex-col gap-2">
-              <div className={`rounded-md border bg-gradient-to-b px-3 py-1.5 text-center text-xs font-bold uppercase tracking-widest shadow-bevel-sm ${COLUMN_META[s].cls}`}>
-                {COLUMN_META[s].label}
-                <span className="ml-1.5 rounded-full bg-ink/15 px-1.5 text-[10px]">
-                  {byStatus(s).length}
-                </span>
-              </div>
-              <div className="flex min-h-[120px] flex-col gap-2 rounded-lg border-2 border-wood-dark/40 bg-wood-light/30 p-2 shadow-engraved">
-                {byStatus(s).length === 0 && (
-                  <p className="p-2 text-center text-[11px] italic text-ink-faint">
-                    {filtersActive ? "no matches" : "empty slot"}
-                  </p>
-                )}
-                {byStatus(s).map((app) => (
-                  <Card key={app._id} material="paper" className="!p-3 shadow-bevel-sm">
-                    <div className="flex items-start justify-between gap-1">
-                      <Link
-                        href={`/applications/${app._id}`}
-                        className="text-sm font-bold leading-tight text-ink underline-offset-2 hover:text-brass-dark hover:underline"
-                      >
-                        {app.title}
-                      </Link>
-                      <Badge tone={app.status} dot className="shrink-0 !px-1.5 !text-[10px]" />
+              {/* Kanban columns — horizontal scroll */}
+              <div className="flex gap-4 overflow-x-auto pb-2">
+                {STATUSES.filter((s) => !hiddenStatuses.has(s)).map((s) => (
+                  <div key={s} className="flex min-w-[280px] flex-col gap-2">
+                    <div className={`rounded-lg px-3 py-1.5 text-center text-xs font-bold uppercase tracking-widest ${COLUMN_META[s].cls}`}>
+                      {COLUMN_META[s].label}
+                      <span className="ml-1.5 rounded-full bg-elevated/60 px-1.5 text-[10px]">
+                        {byStatus(s).length}
+                      </span>
                     </div>
-                    {app.needsFollowUp && (
-                      <p className="mt-1 inline-block rounded-full border border-blood-dark/50 bg-blood-light/40 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blood-dark">
-                        ⏰ Follow up
-                      </p>
-                    )}
-                    {app.companyName && (
-                      <p className="mt-0.5 text-xs font-semibold text-ink-soft">{app.companyName}</p>
-                    )}
-                    <p className="mt-1 text-[11px] opacity-70">
-                      🗓 {fmtDate(app.dateApplied)}
-                      {app.source && <> · <span className="uppercase">{app.source}</span></>}
-                    </p>
-                    {app.salary && (
-                      <p className="mt-0.5 text-[11px] font-semibold text-moss-dark">💰 {app.salary}</p>
-                    )}
-                    {app.jd && (
-                      <p className="mt-1">
-                        <RoleFitScore jd={app.jd} />
-                      </p>
-                    )}
-                    {app.notes && (
-                      <p className="mt-1 line-clamp-2 text-[11px] italic opacity-70">{app.notes}</p>
-                    )}
-                    {app.applyUrl && (
-                      <a
-                        href={app.applyUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-1 inline-block text-[11px] font-semibold text-brass-dark underline decoration-brass/50 underline-offset-2 hover:text-ink"
-                      >
-                        view posting ↗
-                      </a>
-                    )}
-                    <div className="mt-2 flex items-center justify-between gap-1">
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="paper"
-                          disabled={STATUSES.indexOf(app.status) === 0 || busyId === app._id}
-                          onClick={() => move(app, -1)}
-                          title="Move left"
-                          aria-label={`Move ${app.title} to previous stage`}
-                        >
-                          ←
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="paper"
-                          disabled={STATUSES.indexOf(app.status) === STATUSES.length - 1 || busyId === app._id}
-                          onClick={() => move(app, 1)}
-                          title="Move right"
-                          aria-label={`Move ${app.title} to next stage`}
-                        >
-                          →
-                        </Button>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="paper"
-                        disabled={busyId === app._id}
-                        onClick={() => archive(app)}
-                        title="Archive (soft delete — restore later)"
-                        aria-label={`Archive ${app.title}`}
-                      >
-                        🗃️
-                      </Button>
+                    <div className="flex min-h-[120px] flex-col gap-2 rounded-lg border border-border-subtle bg-elevated/50 p-2">
+                      {byStatus(s).length === 0 && (
+                        <p className="p-2 text-center text-xs italic text-text-tertiary">
+                          {filtersActive ? "no matches" : "empty slot"}
+                        </p>
+                      )}
+                      {byStatus(s).map((app) => (
+                        <Card key={app._id} className="!p-3">
+                          <div className="flex items-start justify-between gap-1">
+                            <Link
+                              href={`/applications/${app._id}`}
+                              className="text-sm font-bold leading-tight text-text-primary underline-offset-2 hover:text-accent hover:underline"
+                            >
+                              {app.title}
+                            </Link>
+                            <Badge tone={app.status} dot className="shrink-0 !px-1.5 !text-[10px]" />
+                          </div>
+                          {app.needsFollowUp && (
+                            <p className="mt-1 inline-block rounded-full border border-error/30 bg-error/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-error">
+                              Follow up
+                            </p>
+                          )}
+                          {app.companyName && (
+                            <p className="mt-0.5 text-xs font-semibold text-text-secondary">{app.companyName}</p>
+                          )}
+                          <p className="mt-1 text-xs text-text-tertiary">
+                            {fmtDate(app.dateApplied)}
+                            {app.source && <> · <span className="uppercase">{app.source}</span></>}
+                          </p>
+                          {app.salary && (
+                            <p className="mt-0.5 text-xs font-semibold text-success">{app.salary}</p>
+                          )}
+                          {app.jd && (
+                            <p className="mt-1">
+                              <RoleFitScore jd={app.jd} />
+                            </p>
+                          )}
+                          {app.notes && (
+                            <p className="mt-1 line-clamp-2 text-xs italic text-text-tertiary">{app.notes}</p>
+                          )}
+                          {app.applyUrl && (
+                            <a
+                              href={app.applyUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-1 inline-block text-xs font-semibold text-accent underline decoration-accent/50 underline-offset-2 hover:text-text-primary"
+                            >
+                              view posting ↗
+                            </a>
+                          )}
+                          <div className="mt-2 flex items-center justify-between gap-1">
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                disabled={STATUSES.indexOf(app.status) === 0 || busyId === app._id}
+                                onClick={() => move(app, -1)}
+                                title="Move left"
+                                aria-label={`Move ${app.title} to previous stage`}
+                              >
+                                ←
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                disabled={STATUSES.indexOf(app.status) === STATUSES.length - 1 || busyId === app._id}
+                                onClick={() => move(app, 1)}
+                                title="Move right"
+                                aria-label={`Move ${app.title} to next stage`}
+                              >
+                                →
+                              </Button>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={busyId === app._id}
+                              onClick={() => archive(app)}
+                              title="Archive (soft delete — restore later)"
+                              aria-label={`Archive ${app.title}`}
+                            >
+                              ✕
+                            </Button>
+                          </div>
+                        </Card>
+                      ))}
                     </div>
-                  </Card>
+                  </div>
                 ))}
-              </div>
-            </div>
-          ))}
               </div>
             </>
           )}

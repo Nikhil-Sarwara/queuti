@@ -1,8 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { Button, Card } from "@/components/ui";
 
-/** Global error boundary — a repair bench instead of a white screen. */
 export default function Error({
   error,
   reset,
@@ -11,19 +11,24 @@ export default function Error({
   reset: () => void;
 }) {
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-6 p-8">
-      <Card material="wood" framed className="w-full text-center shadow-bevel-lg">
-        <p className="font-display text-6xl font-bold text-engraved">🔧</p>
-        <h1 className="mt-2 font-display text-xl font-bold text-ink">
-          Something bent out of shape
+    <main className="flex min-h-dvh items-center justify-center py-16">
+      <Card className="w-full max-w-sm text-center">
+        <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-error/10 text-4xl">
+          🔧
+        </div>
+        <h1 className="text-2xl font-bold text-text-primary">
+          Something went wrong
         </h1>
-        <p className="mt-1 text-sm opacity-70">
+        <p className="mt-1 text-sm text-text-secondary">
           {error.message || "An unexpected error occurred."}
         </p>
-        <div className="mt-4 flex justify-center">
-          <Button variant="brass" onClick={reset}>
-            🛠️ Try again
+        <div className="mt-5 flex justify-center gap-2">
+          <Button variant="primary" onClick={reset}>
+            Try again
           </Button>
+          <Link href="/">
+            <Button variant="ghost">← Back home</Button>
+          </Link>
         </div>
       </Card>
     </main>

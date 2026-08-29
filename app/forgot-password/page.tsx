@@ -24,8 +24,6 @@ export default function ForgotPasswordPage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Request failed");
       setSent(true);
-      // dev-only convenience: currentOrigin is always present client-side,
-      // but only the API decides to include the link (non-production).
       setDevLink(data.devResetLink ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -35,35 +33,42 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <main className="mx-auto max-w-md px-6 py-16">
-      <Card>
-        <h1 className="text-xl font-bold">🔑 Reset your password</h1>
-        <p className="mt-1 text-xs opacity-70">
-          Enter your account email and we&apos;ll send a one-time reset link.
-        </p>
+    <main className="flex min-h-dvh items-center justify-center py-16">
+      <Card className="w-full max-w-sm">
+        <div className="mb-6 text-center">
+          <Link href="/" className="inline-block text-2xl font-bold text-text-primary">
+            Queuti <span className="text-accent">🦉</span>
+          </Link>
+          <h1 className="mt-4 text-xl font-bold text-text-primary">
+            Reset your password
+          </h1>
+          <p className="mt-1 text-sm text-text-secondary">
+            Enter your email and we&apos;ll send a reset link.
+          </p>
+        </div>
 
         {sent ? (
-          <div className="mt-6 space-y-3">
-            <p className="rounded-md border border-green-700/40 bg-green-50 px-3 py-2 text-sm text-green-900">
+          <div className="space-y-3">
+            <p className="rounded-lg border border-success/20 bg-success/5 px-3 py-2 text-sm text-success">
               If an account exists for that email, a reset link is on its way.
               It expires in 1 hour.
             </p>
             {devLink && (
-              <div className="rounded-md border border-ink/20 bg-ink/5 px-3 py-2 text-xs">
-                <p className="font-semibold uppercase tracking-wider opacity-60">
-                  Dev reset link (local/staging only)
+              <div className="rounded-lg border border-border-subtle bg-elevated px-3 py-2 text-xs">
+                <p className="font-semibold uppercase tracking-wider text-text-tertiary">
+                  Dev reset link
                 </p>
-                <Link href={devLink} className="mt-1 block break-all font-mono text-brass-dark underline">
+                <Link href={devLink} className="mt-1 block break-all font-mono text-accent underline">
                   {devLink}
                 </Link>
               </div>
             )}
-            <Button variant="paper" onClick={() => setSent(false)}>
+            <Button variant="secondary" onClick={() => setSent(false)} className="w-full">
               Use a different email
             </Button>
           </div>
         ) : (
-          <form onSubmit={onSubmit} className="mt-6 space-y-4">
+          <form onSubmit={onSubmit} className="space-y-4">
             <TextField
               label="Email"
               type="email"
@@ -73,19 +78,16 @@ export default function ForgotPasswordPage() {
               required
             />
             {error && (
-              <p role="alert" className="rounded border-2 border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+              <p role="alert" className="rounded-lg border border-error/20 bg-error/5 px-3 py-2 text-sm text-error">
                 {error}
               </p>
             )}
-            <Button type="submit" disabled={busy}>
+            <Button type="submit" disabled={busy} className="w-full">
               {busy ? "Sending…" : "Send reset link"}
             </Button>
           </form>
         )}
       </Card>
-      <p className="mt-6 text-center text-xs opacity-50">
-        <Link href="/login">← Back to sign in</Link>
-      </p>
     </main>
   );
 }

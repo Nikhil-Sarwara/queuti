@@ -10,66 +10,76 @@ import { FollowUpPanel } from "@/components/FollowUpPanel";
 import { CompaniesPanel } from "@/components/CompaniesPanel";
 import { MlPanel } from "@/components/MlPanel";
 import SystemStatusCard from "@/components/SystemStatusCard";
+import { Button } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
-/** Protected dashboard — hosts the Kanban application tracker (task #5). */
 export default async function DashboardPage() {
   const token = cookies().get("queuti_token")?.value;
   const session = token ? await verifySession(token) : null;
   if (!session) redirect("/login");
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 py-8 md:px-6">
-      <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
+    <div className="py-8">
+      {/* ── Header ── */}
+      <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold text-engraved">
-            🗂️ Queuti — Application Tracker
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">
+            Queuti — Application Tracker
           </h1>
-          <p className="mt-1 text-sm opacity-70">
-            Signed in as <strong>{session.email}</strong> · drag-free board:
-            use ← → to move applications between stages
+          <p className="mt-1 text-sm text-text-secondary">
+            Signed in as <strong className="text-text-primary">{session.email}</strong>
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            href="/account"
-            className="rounded-md border-2 border-b-4 border-paper-dark/80 bg-gradient-to-b from-paper-light to-paper px-4 py-2 text-sm font-semibold text-ink shadow-bevel-sm transition active:translate-y-px active:border-b-2"
-          >
-            ⚙️ Account
+          <Link href="/account">
+            <Button variant="secondary" size="sm">⚙️ Account</Button>
           </Link>
           <form action="/api/auth/logout" method="post">
-            <button
-              type="submit"
-              className="rounded-md border-2 border-b-4 border-blood-dark/70 bg-gradient-to-b from-blood-light to-blood px-4 py-2 text-sm font-semibold text-paper-light shadow-bevel-sm transition active:translate-y-px active:border-b-2"
-            >
-              Log out
-            </button>
+            <Button type="submit" variant="danger" size="sm">Log out</Button>
           </form>
         </div>
       </header>
 
-      <OverviewStats />
+      {/* ── Bento Grid ── */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {/* Row 1: Overview stats — full width */}
+        <div className="lg:col-span-3">
+          <OverviewStats />
+        </div>
 
-      <FollowUpPanel />
+        {/* Row 2: Kanban / Table (2 cols) + Upcoming Interviews (1 col) */}
+        <div className="lg:col-span-2">
+          <KanbanBoard />
+        </div>
+        <div className="lg:col-span-1">
+          <UpcomingInterviews />
+        </div>
 
-      <KanbanBoard />
+        {/* Row 3: Follow-up + Companies + ML */}
+        <div className="lg:col-span-2">
+          <FollowUpPanel />
+        </div>
+        <div className="lg:col-span-1 space-y-4">
+          <CompaniesPanel />
+          <MlPanel />
+        </div>
 
-      <UpcomingInterviews />
+        {/* Row 4: Analytics + Market Intel + System Status */}
+        <div className="lg:col-span-2">
+          <AnalyticsDashboard />
+        </div>
+        <div className="lg:col-span-1">
+          <SystemStatusCard />
+        </div>
+      </div>
 
-      <AnalyticsDashboard />
-
-      <CompaniesPanel />
-
-      <MlPanel />
-
-      <SystemStatusCard />
-
-      <p className="mt-8 text-center text-xs opacity-50">
-        <Link href="/" className="hover:underline">← Back to home</Link> ·{" "}
-        <Link href="/stats" className="hover:underline">🌍 Market intelligence</Link> ·{" "}
-        <Link href="/dashboard" className="hover:underline">Refresh view</Link>
-      </p>
-    </main>
+      {/* ── Footer links ── */}
+      <nav className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs text-text-tertiary">
+        <Link href="/" className="hover:text-text-secondary">← Home</Link>
+        <Link href="/stats" className="hover:text-text-secondary">🌍 Market intelligence</Link>
+        <Link href="/dashboard" className="hover:text-text-secondary">Refresh view</Link>
+      </nav>
+    </div>
   );
 }

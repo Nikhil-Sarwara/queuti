@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card, TextField, Button } from "@/components/ui";
 
-// `?mode=register` (landing CTAs) preselects the register tab.
 const initialMode = (): "login" | "register" =>
   typeof window !== "undefined" &&
   new URLSearchParams(window.location.search).get("mode") === "register"
@@ -49,16 +48,23 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto max-w-md px-6 py-16">
-      <Card>
-        <h1 className="text-xl font-bold">Queuti — Sign in</h1>
-        <p className="mt-1 text-xs opacity-70">
-          {mode === "login"
-            ? "Welcome back. Login to your job tracker."
-            : "Create an account to start tracking."}
-        </p>
+    <main className="flex min-h-dvh items-center justify-center py-16">
+      <Card className="w-full max-w-sm">
+        <div className="mb-6 text-center">
+          <Link href="/" className="inline-block text-2xl font-bold text-text-primary">
+            Queuti <span className="text-accent">🦉</span>
+          </Link>
+          <h1 className="mt-4 text-xl font-bold text-text-primary">
+            {mode === "login" ? "Welcome back" : "Create an account"}
+          </h1>
+          <p className="mt-1 text-sm text-text-secondary">
+            {mode === "login"
+              ? "Sign in to your job tracker."
+              : "Start tracking your applications today."}
+          </p>
+        </div>
 
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
+        <form onSubmit={onSubmit} className="space-y-4">
           {mode === "register" && (
             <TextField
               label="Name (optional)"
@@ -85,49 +91,49 @@ export default function LoginPage() {
           />
 
           {error && (
-            <p role="alert" className="rounded border-2 border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+            <p role="alert" className="rounded-lg border border-error/20 bg-error/5 px-3 py-2 text-sm text-error">
               {error}
             </p>
           )}
 
-          <Button type="submit" disabled={busy}>
+          <Button type="submit" disabled={busy} className="w-full">
             {busy ? "One sec…" : mode === "login" ? "Sign in" : "Create account"}
           </Button>
         </form>
 
-        <p className="mt-4 text-xs opacity-70">
+        <div className="mt-5 space-y-2 text-center text-xs text-text-secondary">
           {mode === "login" ? (
             <>
-              No account yet?{" "}
-              <button
-                type="button"
-                className="font-semibold underline"
-                onClick={() => setMode("register")}
-              >
-                Register
-              </button>
-              {" · "}
-              <Link href="/forgot-password" className="font-semibold underline">
-                Forgot password?
-              </Link>
+              <p>
+                No account yet?{" "}
+                <button
+                  type="button"
+                  className="font-medium text-accent hover:text-accent-hover"
+                  onClick={() => setMode("register")}
+                >
+                  Register
+                </button>
+              </p>
+              <p>
+                <Link href="/forgot-password" className="font-medium text-accent hover:text-accent-hover">
+                  Forgot password?
+                </Link>
+              </p>
             </>
           ) : (
-            <>
+            <p>
               Have an account?{" "}
               <button
                 type="button"
-                className="font-semibold underline"
+                className="font-medium text-accent hover:text-accent-hover"
                 onClick={() => setMode("login")}
               >
                 Sign in
               </button>
-            </>
+            </p>
           )}
-        </p>
+        </div>
       </Card>
-      <p className="mt-6 text-center text-xs opacity-50">
-        <Link href="/">← Back to home</Link>
-      </p>
     </main>
   );
 }

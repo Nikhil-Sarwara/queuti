@@ -41,7 +41,7 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 /**
- * Companies + contacts management (#14). CRUD round-trips against
+ * Companies + contacts management. CRUD round-trips against
  * /api/companies and /api/contacts; applications linked by company name
  * are counted per company so the tracker relationship is visible.
  */
@@ -52,12 +52,10 @@ export function CompaniesPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // company form
   const [companyForm, setCompanyForm] = useState(EMPTY_COMPANY);
   const [editingCompany, setEditingCompany] = useState<string | null>(null);
   const [busyCompany, setBusyCompany] = useState(false);
 
-  // contact form
   const [contactForm, setContactForm] = useState(EMPTY_CONTACT);
   const [editingContact, setEditingContact] = useState<string | null>(null);
   const [busyContact, setBusyContact] = useState(false);
@@ -90,7 +88,6 @@ export function CompaniesPanel() {
     load();
   }, [load]);
 
-  // ---------- companies ----------
   const setCF = (k: keyof typeof EMPTY_COMPANY) => (v: string) =>
     setCompanyForm((f) => ({ ...f, [k]: v }));
 
@@ -115,7 +112,7 @@ export function CompaniesPanel() {
       }
       setCompanyForm(EMPTY_COMPANY);
       setEditingCompany(null);
-      toast(editingCompany ? "💾 Company updated" : "➕ Company added", "success");
+      toast(editingCompany ? "Company updated" : "Company added", "success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save company");
     } finally {
@@ -130,13 +127,12 @@ export function CompaniesPanel() {
       await api(`/api/companies/${c._id}`, { method: "DELETE" });
       setCompanies((prev) => prev.filter((x) => x._id !== c._id));
       setContacts((prev) => prev.map((ct) => ({ ...ct, companyId: "" })));
-      toast(`🗑️ Deleted ${c.name}`, "success");
+      toast(`Deleted ${c.name}`, "success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete company");
     }
   }
 
-  // ---------- contacts ----------
   const setCtF = (k: keyof typeof EMPTY_CONTACT) => (v: string) =>
     setContactForm((f) => ({ ...f, [k]: v }));
 
@@ -161,7 +157,7 @@ export function CompaniesPanel() {
       }
       setContactForm(EMPTY_CONTACT);
       setEditingContact(null);
-      toast(editingContact ? "💾 Contact updated" : "➕ Contact added", "success");
+      toast(editingContact ? "Contact updated" : "Contact added", "success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save contact");
     } finally {
@@ -175,7 +171,7 @@ export function CompaniesPanel() {
     try {
       await api(`/api/contacts/${c._id}`, { method: "DELETE" });
       setContacts((prev) => prev.filter((x) => x._id !== c._id));
-      toast(`🗑️ Deleted ${c.name}`, "success");
+      toast(`Deleted ${c.name}`, "success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete contact");
     }
@@ -184,7 +180,7 @@ export function CompaniesPanel() {
   if (loading) {
     return (
       <section className="mt-8">
-        <Card className="text-sm opacity-70">🏢 Loading companies & contacts…</Card>
+        <Card className="text-sm text-text-secondary">Loading companies & contacts…</Card>
       </section>
     );
   }
@@ -193,25 +189,25 @@ export function CompaniesPanel() {
     companies.find((c) => c._id === id)?.name || "";
 
   const inputCls =
-    "w-full rounded-md border border-ink/30 bg-ink/10 px-2.5 py-1.5 text-sm text-ink shadow-engraved outline-none transition placeholder:text-ink-faint focus:border-brass focus:bg-paper-light/60 focus:ring-2 focus:ring-brass/30";
+    "w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-text-primary outline-none transition-all duration-150 placeholder:text-text-tertiary focus:border-accent focus:ring-2 focus:ring-accent/30";
 
   return (
     <section className="mt-8">
-      <h2 className="font-display text-lg font-bold text-engraved">
-        🏢 Companies & Contacts
+      <h2 className="text-lg font-bold text-text-primary">
+        Companies & Contacts
       </h2>
 
       {error && (
-        <Card material="paper" className="mt-3 border-blood/60 shadow-bevel-sm" role="alert">
-          <p className="text-sm font-semibold text-blood">⚠️ {error}</p>
+        <Card className="mt-3 border-error/20" role="alert">
+          <p className="text-sm font-semibold text-error">{error}</p>
         </Card>
       )}
 
       <div className="mt-3 grid gap-3 lg:grid-cols-2">
         {/* ---- Companies ---- */}
-        <Card material="wood" framed className="shadow-bevel">
-          <h3 className="font-display text-base font-bold text-ink text-engraved">
-            🏛️ Companies
+        <Card>
+          <h3 className="text-base font-bold text-text-primary">
+            Companies
           </h3>
           <form onSubmit={saveCompany} className="mt-3 grid grid-cols-2 gap-2">
             <div className="col-span-2">
@@ -231,46 +227,46 @@ export function CompaniesPanel() {
             </div>
             <div className="col-span-2 flex items-center justify-end gap-2">
               {editingCompany && (
-                <Button type="button" variant="paper" size="sm" onClick={() => { setCompanyForm(EMPTY_COMPANY); setEditingCompany(null); }}>
+                <Button type="button" variant="secondary" size="sm" onClick={() => { setCompanyForm(EMPTY_COMPANY); setEditingCompany(null); }}>
                   Cancel
                 </Button>
               )}
-              <Button type="submit" variant="brass" size="sm" disabled={busyCompany || !companyForm.name.trim()}>
-                {busyCompany ? "Saving…" : editingCompany ? "💾 Save company" : "➕ Add company"}
+              <Button type="submit" variant="primary" size="sm" disabled={busyCompany || !companyForm.name.trim()}>
+                {busyCompany ? "Saving…" : editingCompany ? "Save company" : "Add company"}
               </Button>
             </div>
           </form>
 
           <ul className="mt-4 space-y-2">
             {companies.length === 0 && (
-              <li className="text-sm italic opacity-60">No companies yet.</li>
+              <li className="text-sm italic text-text-tertiary">No companies yet.</li>
             )}
             {companies.map((c) => {
               const count = appCounts[c.name.trim().toLowerCase()] || 0;
               return (
-                <li key={c._id} className="rounded-md border border-ink/15 bg-paper-dark/40 p-2.5 shadow-engraved">
+                <li key={c._id} className="rounded-lg border border-border-subtle bg-elevated p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-sm font-bold">{c.name}</p>
-                      <p className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] opacity-70">
+                      <p className="text-sm font-bold text-text-primary">{c.name}</p>
+                      <p className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-text-tertiary">
                         {count > 0 && (
-                          <span className="font-semibold text-moss-dark">📦 {count} application{count === 1 ? "" : "s"}</span>
+                          <span className="font-semibold text-success">{count} application{count === 1 ? "" : "s"}</span>
                         )}
                         {c.industry && <span>{c.industry}</span>}
-                        {c.location && <span>📍 {c.location}</span>}
+                        {c.location && <span>{c.location}</span>}
                         {c.website && (
-                          <a href={c.website} target="_blank" rel="noopener noreferrer" className="font-semibold text-brass-dark underline decoration-brass/50 underline-offset-2 hover:text-ink">
+                          <a href={c.website} target="_blank" rel="noopener noreferrer" className="font-semibold text-accent underline decoration-accent/50 underline-offset-2 hover:text-text-primary">
                             site ↗
                           </a>
                         )}
                       </p>
-                      {c.notes && <p className="mt-0.5 line-clamp-2 text-[11px] italic opacity-60">{c.notes}</p>}
+                      {c.notes && <p className="mt-0.5 line-clamp-2 text-xs italic text-text-tertiary">{c.notes}</p>}
                     </div>
                     <div className="flex shrink-0 gap-1">
-                      <Button size="sm" variant="paper" title="Edit" aria-label={`Edit company ${c.name}`} onClick={() => { setCompanyForm({ name: c.name, website: c.website, industry: c.industry, location: c.location, notes: c.notes }); setEditingCompany(c._id); }}>
+                      <Button size="sm" variant="ghost" title="Edit" aria-label={`Edit company ${c.name}`} onClick={() => { setCompanyForm({ name: c.name, website: c.website, industry: c.industry, location: c.location, notes: c.notes }); setEditingCompany(c._id); }}>
                         ✏️
                       </Button>
-                      <Button size="sm" variant="danger" title="Delete" aria-label={`Delete company ${c.name}`} onClick={() => deleteCompany(c)}>
+                      <Button size="sm" variant="ghost" title="Delete" aria-label={`Delete company ${c.name}`} onClick={() => deleteCompany(c)}>
                         ✕
                       </Button>
                     </div>
@@ -282,35 +278,35 @@ export function CompaniesPanel() {
         </Card>
 
         {/* ---- Contacts ---- */}
-        <Card material="leather" framed className="shadow-bevel">
-          <h3 className="font-display text-base font-bold text-paper-light text-embossed">
-            🪪 Contacts
+        <Card>
+          <h3 className="text-base font-bold text-text-primary">
+            Contacts
           </h3>
           <form onSubmit={saveContact} className="mt-3 grid grid-cols-2 gap-2">
             <div className="col-span-2">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-paper-light/80">
+              <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary">
                 Name *
               </label>
-              <input required value={contactForm.name} onChange={(e) => setCtF("name")(e.target.value)} placeholder="Priya Sharma" className={`mt-1.5 ${inputCls} bg-paper-light/90`} />
+              <input required value={contactForm.name} onChange={(e) => setCtF("name")(e.target.value)} placeholder="Priya Sharma" className={`mt-1.5 ${inputCls}`} />
             </div>
             <div className="col-span-2 md:col-span-1">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-paper-light/80">
+              <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary">
                 Email
               </label>
-              <input type="email" value={contactForm.email} onChange={(e) => setCtF("email")(e.target.value)} placeholder="priya@acme.com" className={`mt-1.5 ${inputCls} bg-paper-light/90`} />
+              <input type="email" value={contactForm.email} onChange={(e) => setCtF("email")(e.target.value)} placeholder="priya@acme.com" className={`mt-1.5 ${inputCls}`} />
             </div>
             <div className="col-span-2 md:col-span-1">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-paper-light/80">
+              <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary">
                 Phone
               </label>
-              <input value={contactForm.phone} onChange={(e) => setCtF("phone")(e.target.value)} placeholder="+61 4xx xxx xxx" className={`mt-1.5 ${inputCls} bg-paper-light/90`} />
+              <input value={contactForm.phone} onChange={(e) => setCtF("phone")(e.target.value)} placeholder="+61 4xx xxx xxx" className={`mt-1.5 ${inputCls}`} />
             </div>
             <div className="col-span-2">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-paper-light/80">
+              <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary">
                 Company
               </label>
               <select
-                className={`mt-1.5 ${inputCls} bg-paper-light/90`}
+                className={`mt-1.5 ${inputCls}`}
                 value={contactForm.companyId}
                 onChange={(e) => setCtF("companyId")(e.target.value)}
               >
@@ -321,50 +317,50 @@ export function CompaniesPanel() {
               </select>
             </div>
             <div className="col-span-2">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-paper-light/80">
+              <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary">
                 Notes
               </label>
-              <input value={contactForm.notes} onChange={(e) => setCtF("notes")(e.target.value)} placeholder="Recruiter, met at meetup…" className={`mt-1.5 ${inputCls} bg-paper-light/90`} />
+              <input value={contactForm.notes} onChange={(e) => setCtF("notes")(e.target.value)} placeholder="Recruiter, met at meetup…" className={`mt-1.5 ${inputCls}`} />
             </div>
             <div className="col-span-2 flex items-center justify-end gap-2">
               {editingContact && (
-                <Button type="button" variant="paper" size="sm" onClick={() => { setContactForm(EMPTY_CONTACT); setEditingContact(null); }}>
+                <Button type="button" variant="secondary" size="sm" onClick={() => { setContactForm(EMPTY_CONTACT); setEditingContact(null); }}>
                   Cancel
                 </Button>
               )}
-              <Button type="submit" variant="brass" size="sm" disabled={busyContact || !contactForm.name.trim()}>
-                {busyContact ? "Saving…" : editingContact ? "💾 Save contact" : "➕ Add contact"}
+              <Button type="submit" variant="primary" size="sm" disabled={busyContact || !contactForm.name.trim()}>
+                {busyContact ? "Saving…" : editingContact ? "Save contact" : "Add contact"}
               </Button>
             </div>
           </form>
 
           <ul className="mt-4 space-y-2">
             {contacts.length === 0 && (
-              <li className="text-sm italic text-paper-light/60">No contacts yet.</li>
+              <li className="text-sm italic text-text-tertiary">No contacts yet.</li>
             )}
             {contacts.map((c) => (
-              <li key={c._id} className="rounded-md border border-paper-light/15 bg-paper-light/10 p-2.5 shadow-engraved">
+              <li key={c._id} className="rounded-lg border border-border-subtle bg-elevated p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-paper-light">{c.name}</p>
-                    <p className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] opacity-80">
+                    <p className="text-sm font-bold text-text-primary">{c.name}</p>
+                    <p className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-text-secondary">
                       {companyName(c.companyId) && (
                         <Badge tone="screening" dot className="!px-1.5 !text-[10px]">{companyName(c.companyId)}</Badge>
                       )}
                       {c.email && (
-                        <a href={`mailto:${c.email}`} className="font-semibold text-brass-light underline decoration-brass/40 underline-offset-2 hover:text-paper-light">
+                        <a href={`mailto:${c.email}`} className="font-semibold text-accent underline decoration-accent/40 underline-offset-2 hover:text-text-primary">
                           {c.email}
                         </a>
                       )}
-                      {c.phone && <span>📞 {c.phone}</span>}
+                      {c.phone && <span>{c.phone}</span>}
                     </p>
-                    {c.notes && <p className="mt-0.5 line-clamp-2 text-[11px] italic opacity-60">{c.notes}</p>}
+                    {c.notes && <p className="mt-0.5 line-clamp-2 text-xs italic text-text-tertiary">{c.notes}</p>}
                   </div>
                   <div className="flex shrink-0 gap-1">
-                    <Button size="sm" variant="paper" title="Edit" aria-label={`Edit contact ${c.name}`} onClick={() => { setContactForm({ name: c.name, email: c.email, phone: c.phone, companyId: c.companyId, notes: c.notes }); setEditingContact(c._id); }}>
+                    <Button size="sm" variant="ghost" title="Edit" aria-label={`Edit contact ${c.name}`} onClick={() => { setContactForm({ name: c.name, email: c.email, phone: c.phone, companyId: c.companyId, notes: c.notes }); setEditingContact(c._id); }}>
                       ✏️
                     </Button>
-                    <Button size="sm" variant="danger" title="Delete" aria-label={`Delete contact ${c.name}`} onClick={() => deleteContact(c)}>
+                    <Button size="sm" variant="ghost" title="Delete" aria-label={`Delete contact ${c.name}`} onClick={() => deleteContact(c)}>
                       ✕
                     </Button>
                   </div>

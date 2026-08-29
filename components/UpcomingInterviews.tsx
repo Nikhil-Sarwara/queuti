@@ -48,7 +48,7 @@ function daysAway(iso: string) {
 
 /**
  * Upcoming interviews & screenings — events in the next 14 days, sorted by
- * date, rendered as a leather calendar-strip of paper cards (#16).
+ * date, rendered as a card grid.
  */
 export function UpcomingInterviews() {
   const [events, setEvents] = useState<UpcomingEvent[]>([]);
@@ -70,21 +70,21 @@ export function UpcomingInterviews() {
 
   return (
     <section className="mt-8">
-      <h2 className="font-display text-lg font-bold text-engraved">
-        🎯 Upcoming interviews & screenings
+      <h2 className="text-lg font-bold text-text-primary">
+        Upcoming interviews & screenings
       </h2>
       <div className="mt-3">
         {loading ? (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3" aria-busy="true" aria-label="Loading upcoming events">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="h-24 animate-pulse rounded-lg border border-ink/10 bg-paper-dark/50 shadow-engraved" />
+              <div key={i} className="h-24 animate-pulse rounded-lg border border-border-subtle bg-elevated" />
             ))}
           </div>
         ) : error ? (
-          <Card className="text-sm text-blood-dark" role="alert">⚠️ {error}</Card>
+          <Card className="text-sm text-error" role="alert">{error}</Card>
         ) : events.length === 0 ? (
-          <Card material="paper" framed className="shadow-bevel-sm">
-            <p className="text-sm italic opacity-60">
+          <Card>
+            <p className="text-sm italic text-text-tertiary">
               Nothing booked in the next 14 days — add interview or screening
               events from an application&apos;s detail page to see them here.
             </p>
@@ -97,29 +97,29 @@ export function UpcomingInterviews() {
               return (
                 <li key={ev._id}>
                   <Link href={`/applications/${ev.application._id}`} className="block">
-                    <Card material="paper" framed className="shadow-bevel transition hover:-translate-y-0.5 hover:shadow-bevel-lg">
+                    <Card className="transition-all duration-150 hover:-translate-y-0.5 hover:shadow-2">
                       <div className="flex items-start gap-3">
                         {/* date tab */}
-                        <span className="flex w-14 shrink-0 flex-col items-center rounded-md border border-brass-dark/50 bg-gradient-to-b from-brass-light to-brass px-2 py-1.5 shadow-bevel-sm">
-                          <span className="font-display text-xl font-bold leading-none text-ink">{d.day}</span>
-                          <span className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-ink/70">{d.month}</span>
+                        <span className="flex w-14 shrink-0 flex-col items-center rounded-lg border border-border-subtle bg-elevated px-2 py-1.5">
+                          <span className="text-xl font-bold leading-none text-text-primary">{d.day}</span>
+                          <span className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-text-secondary">{d.month}</span>
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-bold leading-tight">{ev.application.title}</p>
-                          <p className="mt-0.5 text-xs font-semibold text-ink-soft">
+                          <p className="text-sm font-bold leading-tight text-text-primary">{ev.application.title}</p>
+                          <p className="mt-0.5 text-xs font-semibold text-text-secondary">
                             {ev.application.companyName || "No company"}
                           </p>
-                          <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] opacity-75">
+                          <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-text-tertiary">
                             <Badge tone={meta.tone} dot className="!px-1.5 !text-[10px]">
                               {meta.label}
                             </Badge>
                             <span>{d.weekday} · {d.time}</span>
                           </p>
-                          <p className="mt-0.5 text-[11px] font-bold uppercase tracking-wide text-moss-dark">
+                          <p className="mt-0.5 text-xs font-bold uppercase tracking-wide text-success">
                             {daysAway(ev.occurredAt)} · {d.full}
                           </p>
                           {ev.note && (
-                            <p className="mt-1 line-clamp-2 text-[11px] italic opacity-60">{ev.note}</p>
+                            <p className="mt-1 line-clamp-2 text-xs italic text-text-tertiary">{ev.note}</p>
                           )}
                         </div>
                       </div>

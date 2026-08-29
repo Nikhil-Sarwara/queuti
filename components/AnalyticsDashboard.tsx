@@ -32,7 +32,7 @@ const STAGE_META: Record<AnalyticsStatus, { label: string; bar: string }> = {
 
 const MAX_BAR_WIDTH = 100;
 
-/** Skeuomorphic analytics panel — funnel, avg response days, source performance (#7). */
+/** Analytics panel — funnel, avg response days, source performance. */
 export function AnalyticsDashboard() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -49,15 +49,15 @@ export function AnalyticsDashboard() {
 
   if (error) {
     return (
-      <Card className="text-sm text-blood-dark">
-        ⚠️ Could not load analytics: {error}
+      <Card className="text-sm text-error">
+        Could not load analytics: {error}
       </Card>
     );
   }
   if (!data) {
     return (
-      <Card className="text-sm opacity-70">
-        📊 Loading analytics dashboard…
+      <Card className="text-sm text-text-secondary">
+        Loading analytics dashboard…
       </Card>
     );
   }
@@ -72,50 +72,50 @@ export function AnalyticsDashboard() {
 
   return (
     <section className="mt-8">
-      <h2 className="font-display text-lg font-bold text-engraved">
-        📊 Analytics
+      <h2 className="text-lg font-bold text-text-primary">
+        Analytics
       </h2>
 
       {/* KPI strip */}
       <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Card className="text-center">
-          <p className="text-3xl font-bold text-engraved">{data.totals.total}</p>
-          <p className="mt-1 text-xs uppercase tracking-wide opacity-70">Applied</p>
+        <Card className="text-center p-4">
+          <p className="text-2xl font-bold text-text-primary">{data.totals.total}</p>
+          <p className="mt-1 text-sm font-medium text-text-secondary">Applied</p>
         </Card>
-        <Card className="text-center">
-          <p className="text-3xl font-bold text-engraved">
+        <Card className="text-center p-4">
+          <p className="text-2xl font-bold text-text-primary">
             {data.avgResponseDays === null ? "—" : `${data.avgResponseDays}d`}
           </p>
-          <p className="mt-1 text-xs uppercase tracking-wide opacity-70">
+          <p className="mt-1 text-sm font-medium text-text-secondary">
             Avg response ({data.respondedCount})
           </p>
         </Card>
-        <Card className="text-center">
-          <p className="text-3xl font-bold text-engraved">{offerRate}%</p>
-          <p className="mt-1 text-xs uppercase tracking-wide opacity-70">Offer rate</p>
+        <Card className="text-center p-4">
+          <p className="text-2xl font-bold text-text-primary">{offerRate}%</p>
+          <p className="mt-1 text-sm font-medium text-text-secondary">Offer rate</p>
         </Card>
-        <Card className="text-center">
-          <p className="text-3xl font-bold text-engraved">{ghostRate}%</p>
-          <p className="mt-1 text-xs uppercase tracking-wide opacity-70">Ghosted</p>
+        <Card className="text-center p-4">
+          <p className="text-2xl font-bold text-text-primary">{ghostRate}%</p>
+          <p className="mt-1 text-sm font-medium text-text-secondary">Ghosted</p>
         </Card>
       </div>
 
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         {/* Funnel */}
         <Card>
-          <h3 className="font-display text-sm font-bold text-engraved">
-            🧪 Funnel by stage
+          <h3 className="text-sm font-bold text-text-primary">
+            Funnel by stage
           </h3>
           <ul className="mt-3 space-y-2">
             {data.funnel.map((f) => (
               <li key={f.status}>
                 <div className="mb-1 flex justify-between text-xs">
-                  <span>{STAGE_META[f.status].label}</span>
-                  <span className="font-bold">{f.count}</span>
+                  <span className="text-text-secondary">{STAGE_META[f.status].label}</span>
+                  <span className="font-bold text-text-primary">{f.count}</span>
                 </div>
-                <div className="h-3 overflow-hidden rounded-sm border border-ink/20 bg-paper-dark shadow-[var(--track-inset)]">
+                <div className="h-3 overflow-hidden rounded-md border border-border-subtle bg-elevated">
                   <div
-                    className={`h-full rounded-sm bg-gradient-to-b ${STAGE_META[f.status].bar} shadow-bevel-sm transition-all duration-500`}
+                    className={`h-full rounded-md ${STAGE_META[f.status].bar} transition-all duration-500`}
                     style={{
                       width: `${(f.count / maxCount) * MAX_BAR_WIDTH}%`,
                     }}
@@ -128,11 +128,11 @@ export function AnalyticsDashboard() {
 
         {/* Sources */}
         <Card>
-          <h3 className="font-display text-sm font-bold text-engraved">
-            🪧 Source performance
+          <h3 className="text-sm font-bold text-text-primary">
+            Source performance
           </h3>
           {data.sources.length === 0 ? (
-            <p className="mt-3 text-sm opacity-60">
+            <p className="mt-3 text-sm text-text-secondary">
               No application sources recorded yet — set a source (e.g. linkedin,
               seek, direct) when adding applications.
             </p>
@@ -147,15 +147,15 @@ export function AnalyticsDashboard() {
                     key={s.source}
                     className="flex items-center justify-between gap-2 text-sm"
                   >
-                    <span className="truncate">{s.source}</span>
+                    <span className="truncate text-text-secondary">{s.source}</span>
                     <span className="flex items-center gap-2">
-                      <span className="hidden h-2 w-24 overflow-hidden rounded-sm border border-ink/20 bg-paper-dark shadow-[var(--track-inset)] sm:block">
+                      <span className="hidden h-2 w-24 overflow-hidden rounded-md border border-border-subtle bg-elevated sm:block">
                         <span
-                          className="block h-full rounded-sm bg-gradient-to-b from-brass-light to-brass shadow-bevel-sm"
+                          className="block h-full rounded-md bg-accent"
                           style={{ width: `${pct}%` }}
                         />
                       </span>
-                      <span className="w-16 text-right font-bold">
+                      <span className="w-16 text-right font-bold text-text-primary">
                         {s.count} · {pct}%
                       </span>
                     </span>

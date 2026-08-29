@@ -19,8 +19,8 @@ const STATUSES: Status[] = [
 ];
 
 const selectCls =
-  "rounded-md border border-ink/30 bg-ink/10 px-2.5 py-2 text-sm text-ink shadow-engraved outline-none transition focus:border-brass focus:bg-paper-light/60 focus:ring-2 focus:ring-brass/30";
-const chkCls = "h-4 w-4 cursor-pointer accent-brass-dark";
+  "rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none transition-all duration-150 focus:border-accent focus:ring-2 focus:ring-accent/30";
+const chkCls = "h-4 w-4 cursor-pointer accent-accent";
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -45,11 +45,10 @@ function fmtDate(iso: string) {
 }
 
 /**
- * Ledger-style table view of applications (#13) — toggled from the kanban
+ * Ledger-style table view of applications — toggled from the kanban
  * board. Search by company/title, filter by status + date range, sort by
  * date or company, and bulk edit rows: multi-select with checkboxes for
- * bulk status change and bulk archive (#26). All filtering is client-side
- * over the same apps the board already holds, so both views always agree.
+ * bulk status change and bulk archive.
  */
 export function ApplicationsTable({
   apps,
@@ -63,7 +62,6 @@ export function ApplicationsTable({
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [sort, setSort] = useState<SortKey>("date-desc");
-  // ---- bulk selection (#26) ----
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState<Status>("interview");
   const [busy, setBusy] = useState(false);
@@ -130,7 +128,7 @@ export function ApplicationsTable({
         "/api/applications/bulk",
         { method: "POST", body: JSON.stringify({ ids, status: bulkStatus }) }
       );
-      toast(`🚚 Moved ${res.updated} to ${bulkStatus}`, "success");
+      toast(`Moved ${res.updated} to ${bulkStatus}`, "success");
       setSelected(new Set());
       onRefresh();
     } catch (e) {
@@ -150,7 +148,7 @@ export function ApplicationsTable({
         "/api/applications/bulk",
         { method: "POST", body: JSON.stringify({ ids, archived: true }) }
       );
-      toast(`🗃️ Archived ${res.updated} application${res.updated === 1 ? "" : "s"}`, "success");
+      toast(`Archived ${res.updated} application${res.updated === 1 ? "" : "s"}`, "success");
       setSelected(new Set());
       onRefresh();
     } catch (e) {
@@ -161,9 +159,9 @@ export function ApplicationsTable({
   }
 
   return (
-    <Card material="paper" framed className="shadow-bevel-lg">
+    <Card>
       <div className="flex flex-col gap-3">
-        {/* ---- filter bar (ledger desk) ---- */}
+        {/* ---- filter bar ---- */}
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
           <div className="sm:col-span-2">
             <TextField
@@ -175,7 +173,7 @@ export function ApplicationsTable({
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-ink-soft">
+            <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary">
               Status
             </label>
             <select
@@ -193,7 +191,7 @@ export function ApplicationsTable({
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-ink-soft">
+            <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary">
               From
             </label>
             <input
@@ -204,7 +202,7 @@ export function ApplicationsTable({
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-ink-soft">
+            <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary">
               To
             </label>
             <input
@@ -217,11 +215,11 @@ export function ApplicationsTable({
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs uppercase tracking-wider opacity-60">
+          <p className="text-xs text-text-tertiary">
             {rows.length} of {apps.length} applications
           </p>
           <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold uppercase tracking-wider text-ink-soft">
+            <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">
               Sort
             </label>
             <select
@@ -232,16 +230,16 @@ export function ApplicationsTable({
               <option value="date-desc">Date (newest first)</option>
               <option value="date-asc">Date (oldest first)</option>
               <option value="company">Company (A–Z)</option>
-              <option value="followup">⏰ Follow-ups first</option>
+              <option value="followup">Follow-ups first</option>
             </select>
           </div>
         </div>
 
-        {/* ---- bulk action bar (#26) ---- */}
+        {/* ---- bulk action bar ---- */}
         {selected.size > 0 && (
-          <div className="flex flex-wrap items-center gap-2 rounded-md border border-brass/40 bg-brass/10 px-3 py-2 shadow-engraved">
-            <span className="text-xs font-bold uppercase tracking-wider text-ink">
-              ✒️ {selected.size} selected
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-accent/20 bg-accent/10 px-3 py-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-text-primary">
+              {selected.size} selected
             </span>
             <select
               className={`${selectCls} !py-1.5`}
@@ -255,28 +253,28 @@ export function ApplicationsTable({
                 </option>
               ))}
             </select>
-            <Button type="button" variant="brass" size="sm" onClick={bulkChange} disabled={busy}>
+            <Button type="button" variant="primary" size="sm" onClick={bulkChange} disabled={busy}>
               {busy ? "Applying…" : "Apply status"}
             </Button>
-            <Button type="button" variant="paper" size="sm" onClick={bulkArchive} disabled={busy}>
-              🗃️ Archive
+            <Button type="button" variant="secondary" size="sm" onClick={bulkArchive} disabled={busy}>
+              Archive
             </Button>
             <button
               type="button"
               onClick={() => setSelected(new Set())}
-              className="text-[11px] font-bold uppercase tracking-wider text-ink-soft underline-offset-2 hover:text-ink hover:underline"
+              className="text-xs font-bold uppercase tracking-wider text-text-secondary underline-offset-2 hover:text-text-primary hover:underline"
             >
               clear
             </button>
           </div>
         )}
 
-        {/* ---- the ledger ---- */}
-        <div className="overflow-x-auto rounded-md border border-ink/25 shadow-engraved">
+        {/* ---- the table ---- */}
+        <div className="overflow-x-auto rounded-lg border border-border">
           <table className="w-full min-w-[680px] border-collapse text-left text-sm">
             <thead>
-              <tr className="bg-gradient-to-b from-paper-dark to-paper text-[11px] uppercase tracking-widest text-ink-soft">
-                <th className="w-9 border-b border-ink/20 px-2 py-2">
+              <tr className="bg-elevated text-xs uppercase tracking-widest text-text-secondary">
+                <th className="w-9 border-b border-border-subtle px-2 py-2.5">
                   <input
                     type="checkbox"
                     className={chkCls}
@@ -286,18 +284,18 @@ export function ApplicationsTable({
                     aria-label="Select all visible"
                   />
                 </th>
-                <th className="border-b border-ink/20 px-3 py-2 font-bold">Role</th>
-                <th className="border-b border-ink/20 px-3 py-2 font-bold">Company</th>
-                <th className="border-b border-ink/20 px-3 py-2 font-bold">Status</th>
-                <th className="border-b border-ink/20 px-3 py-2 font-bold">Source</th>
-                <th className="border-b border-ink/20 px-3 py-2 font-bold">Applied</th>
-                <th className="border-b border-ink/20 px-3 py-2 font-bold">Posting</th>
+                <th className="border-b border-border-subtle px-3 py-2.5 font-bold">Role</th>
+                <th className="border-b border-border-subtle px-3 py-2.5 font-bold">Company</th>
+                <th className="border-b border-border-subtle px-3 py-2.5 font-bold">Status</th>
+                <th className="border-b border-border-subtle px-3 py-2.5 font-bold">Source</th>
+                <th className="border-b border-border-subtle px-3 py-2.5 font-bold">Applied</th>
+                <th className="border-b border-border-subtle px-3 py-2.5 font-bold">Posting</th>
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-3 py-8 text-center text-sm italic opacity-60">
+                  <td colSpan={7} className="px-3 py-8 text-center text-sm italic text-text-tertiary">
                     {apps.length === 0
                       ? "No applications yet — add one above or import a CSV."
                       : "No applications match your filters."}
@@ -307,11 +305,11 @@ export function ApplicationsTable({
                 rows.map((a, i) => (
                   <tr
                     key={a._id}
-                    className={`border-b border-ink/10 transition hover:bg-brass/10 ${
-                      i % 2 === 1 ? "bg-ink/[0.035]" : ""
-                    } ${selected.has(a._id) ? "bg-brass/15" : ""}`}
+                    className={`border-b border-border-subtle transition-all duration-150 hover:bg-elevated ${
+                      selected.has(a._id) ? "bg-accent/10" : ""
+                    }`}
                   >
-                    <td className="px-2 py-2">
+                    <td className="px-2 py-2.5">
                       <input
                         type="checkbox"
                         className={chkCls}
@@ -320,45 +318,45 @@ export function ApplicationsTable({
                         aria-label={`Select ${a.title}`}
                       />
                     </td>
-                    <td className="px-3 py-2 font-semibold">
+                    <td className="px-3 py-2.5 font-semibold">
                       <Link
                         href={`/applications/${a._id}`}
-                        className="underline-offset-2 hover:text-brass-dark hover:underline"
+                        className="underline-offset-2 hover:text-accent hover:underline"
                       >
                         {a.title}
                       </Link>
                     </td>
-                    <td className="px-3 py-2 text-ink-soft">
-                      {a.companyName || <span className="opacity-40">—</span>}
+                    <td className="px-3 py-2.5 text-text-secondary">
+                      {a.companyName || <span className="text-text-tertiary">—</span>}
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-2.5">
                       <Badge tone={a.status} dot className="!px-2 !text-[10px]">
                         {a.status}
                       </Badge>
                       {a.needsFollowUp && (
-                        <span className="mt-1 block text-[10px] font-bold uppercase tracking-wide text-blood-dark">
-                          ⏰ follow up
+                        <span className="mt-1 block text-[10px] font-bold uppercase tracking-wide text-error">
+                          follow up
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-xs uppercase tracking-wide opacity-70">
-                      {a.source || <span className="opacity-40">—</span>}
+                    <td className="px-3 py-2.5 text-xs uppercase tracking-wide text-text-secondary">
+                      {a.source || <span className="text-text-tertiary">—</span>}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs">
+                    <td className="whitespace-nowrap px-3 py-2.5 text-xs text-text-secondary">
                       {fmtDate(a.dateApplied)}
                     </td>
-                    <td className="px-3 py-2 text-xs">
+                    <td className="px-3 py-2.5 text-xs">
                       {a.applyUrl ? (
                         <a
                           href={a.applyUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="font-semibold text-brass-dark underline decoration-brass/50 underline-offset-2 hover:text-ink"
+                          className="font-semibold text-accent underline decoration-accent/50 underline-offset-2 hover:text-text-primary"
                         >
                           view ↗
                         </a>
                       ) : (
-                        <span className="opacity-40">—</span>
+                        <span className="text-text-tertiary">—</span>
                       )}
                     </td>
                   </tr>

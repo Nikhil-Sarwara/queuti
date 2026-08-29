@@ -1,5 +1,4 @@
 import { HTMLAttributes } from "react";
-import { STATUS_TONE_CLS } from "@/lib/tones";
 
 export type BadgeTone =
   | "applied"
@@ -10,13 +9,26 @@ export type BadgeTone =
   | "ghosted"
   | "neutral";
 
+const toneClasses: Record<BadgeTone, string> = {
+  applied: "bg-success/10 text-success",
+  screening: "bg-warning/10 text-warning",
+  interview: "bg-info/10 text-info",
+  offer: "bg-success/10 text-success",
+  rejected: "bg-error/10 text-error",
+  ghosted: "bg-text-secondary/10 text-text-secondary",
+  neutral: "bg-elevated text-text-secondary",
+};
+
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   tone?: BadgeTone;
-  /** Show the little embossed status dot. */
+  /** Show a small dot indicator next to the label. */
   dot?: boolean;
 }
 
-/** Beveled status pill, one per kanban stage (applied → ghosted). */
+/**
+ * Flat pill badge. Low-opacity colored background, no borders or bevels.
+ * Small dot indicator uses currentColor at reduced opacity.
+ */
 export function Badge({
   tone = "neutral",
   dot = true,
@@ -26,10 +38,15 @@ export function Badge({
 }: BadgeProps) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-bold shadow-bevel-sm ${STATUS_TONE_CLS[tone]} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${toneClasses[tone]} ${className}`}
       {...props}
     >
-      {dot && <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />}
+      {dot && (
+        <span
+          aria-hidden
+          className="h-1.5 w-1.5 rounded-full bg-current opacity-60"
+        />
+      )}
       {children}
     </span>
   );

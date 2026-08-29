@@ -1,4 +1,4 @@
-export type ToastTone = "success" | "error" | "info";
+export type ToastTone = "success" | "error" | "warning" | "info";
 
 export interface ToastMessage {
   id: number;
