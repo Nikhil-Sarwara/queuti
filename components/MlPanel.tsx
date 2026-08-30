@@ -14,10 +14,41 @@ interface KanbanApp {
 
 type MlState = "idle" | "loading" | "ready" | "unavailable";
 
+/* ── Score ring — circular SVG gauge ── */
+function ScoreRing({ score, size = 80 }: { score: number; size?: number }) {
+  const r = (size - 8) / 2;
+  const circumference = 2 * Math.PI * r;
+  const offset = circumference - (score / 100) * circumference;
+  const color =
+    score >= 80 ? "var(--color-success, #22c55e)" :
+    score >= 50 ? "var(--color-accent, #6366f1)" :
+    score >= 30 ? "var(--color-warning, #f59e0b)" :
+    "var(--color-error, #ef4444)";
+
+  return (
+    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeWidth="6" className="text-border-subtle" />
+        <circle
+          cx={size / 2} cy={size / 2} r={r} fill="none"
+          stroke={color} strokeWidth="6"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          className="transition-all duration-700 ease-out"
+        />
+      </svg>
+      <div className="absolute flex flex-col items-center">
+        <span className="text-xl font-bold text-text-primary leading-none">{score}</span>
+        <span className="text-[9px] text-text-tertiary">/100</span>
+      </div>
+    </div>
+  );
+}
+
 /**
- * Browser ML panel — job-score classifier + role-fit recommender.
- * Runs entirely in the browser via Transformers.js (quantized MNLI,
- * ~25MB, cached after first download). No API keys, no server calls.
+ * Browser ML panel — compact bento-friendly layout.
+ * Role-fit on top, job scorer below, with better visual hierarchy.
  */
 export function MlPanel({ fill }: { fill?: boolean }) {
   const [state, setState] = useState<MlState>("idle");
@@ -28,6 +59,7 @@ export function MlPanel({ fill }: { fill?: boolean }) {
   const [scoreResult, setScoreResult] = useState<{ role: string; score: number } | null>(null);
   const [scoreError, setScoreError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [activeTab, setActiveTab] = useState<"roles" | "score">("roles");
 
   useEffect(() => {
     let mounted = true;
@@ -35,9 +67,7 @@ export function MlPanel({ fill }: { fill?: boolean }) {
     mlStatus().then((s) => {
       if (mounted) setState(s === "ready" ? "ready" : "unavailable");
     });
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
 
   const runRoleFit = useCallback(async () => {
@@ -74,125 +104,227 @@ export function MlPanel({ fill }: { fill?: boolean }) {
     }
   }, [scoreText, scoreRole]);
 
-  const modelNote =
-    state === "loading"
-      ? "Downloading ML model (~25MB, one-time, cached by your browser)…"
-      : state === "unavailable"
-        ? "Model unavailable — browser ML needs a network connection."
-        : "Model ready in your browser.";
+  const stateBadge = () => {
+    if (state === "loading") return (
+      <div className="flex items-center gap-1.5">
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-warning" />
+        <span className="text-[10px] font-semibold text-warning">Loading</span>
+      </div>
+    );
+    if (state === "unavailable") return (
+      <div className="flex items-center gap-1.5">
+        <span className="h-1.5 w-1.5 rounded-full bg-error" />
+        <span className="text-[10px] font-semibold text-error">Offline</span>
+      </div>
+    );
+    return (
+      <div className="flex items-center gap-1.5">
+        <span className="h-1.5 w-1.5 rounded-full bg-success" />
+        <span className="text-[10px] font-semibold text-success">Ready</span>
+      </div>
+    );
+  };
 
   return (
     <section className={fill ? "flex h-full flex-col" : "mt-8"}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-bold text-text-primary">Browser ML</h2>
-        <Badge tone={state === "ready" ? "interview" : state === "loading" ? "applied" : "rejected"}>
-          {state === "ready" ? "model loaded" : state === "loading" ? "loading model" : "offline"}
-        </Badge>
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <h2 className="text-base font-bold text-text-primary">🧠 Browser ML</h2>
+          {stateBadge()}
+        </div>
+        {state === "loading" && (
+          <span className="text-[10px] text-text-tertiary">~25MB one-time</span>
+        )}
       </div>
-      <p className="mt-1 text-xs text-text-secondary">
-        {modelNote} Runs 100% client-side — nothing leaves your browser.
-      </p>
 
-      <div className="mt-3 grid gap-3 md:grid-cols-2">
-        {/* Role-fit recommender */}
-        <Card className="flex flex-col">
-          <h3 className="text-sm font-bold text-text-primary">
-            Role-fit recommender
-          </h3>
-          <p className="mt-1 text-xs text-text-secondary">
-            Analyses the titles you&apos;ve applied to and tells you which roles
-            you&apos;re actually targeting.
-          </p>
-          <div className="mt-3 flex-1">
-            {roleResults ? (
-              <ul className="space-y-2">
-                {roleResults.map((r) => (
-                  <li key={r.role} className="rounded-lg border border-border-subtle bg-elevated p-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-semibold text-text-primary">{r.role}</span>
-                      <span className="font-bold text-accent">{r.avgScore}%</span>
-                    </div>
-                    <div className="mt-1.5 h-2 overflow-hidden rounded-md bg-elevated">
-                      <div
-                        className="h-full rounded-md bg-accent"
-                        style={{ width: `${Math.min(100, r.avgScore)}%` }}
-                      />
-                    </div>
-                    <p className="mt-1 text-xs text-text-tertiary">
-                      from {r.applications} application{r.applications === 1 ? "" : "s"} · e.g.{" "}
-                      <span className="italic">{r.topTitle}</span>
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-xs text-text-secondary">
-                {roleError
-                  ? roleError
-                  : "Recommendations appear here once you run the analysis."}
-              </p>
-            )}
-          </div>
-          <Button
-            variant="primary"
-            className="mt-3 w-full"
-            disabled={busy || state === "unavailable"}
-            onClick={runRoleFit}
-          >
-            {busy ? "Analysing…" : "Analyse my applications"}
-          </Button>
-        </Card>
+      {/* Tab switcher */}
+      <div className="mt-2 flex gap-1 rounded-lg border border-border-subtle bg-elevated/50 p-0.5">
+        <button
+          type="button"
+          onClick={() => setActiveTab("roles")}
+          className={`flex-1 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all ${
+            activeTab === "roles"
+              ? "bg-surface text-text-primary shadow-sm"
+              : "text-text-tertiary hover:text-text-secondary"
+          }`}
+        >
+          🎯 Role fit
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("score")}
+          className={`flex-1 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all ${
+            activeTab === "score"
+              ? "bg-surface text-text-primary shadow-sm"
+              : "text-text-tertiary hover:text-text-secondary"
+          }`}
+        >
+          📊 Score job
+        </button>
+      </div>
 
-        {/* Job-score classifier */}
-        <Card className="flex flex-col">
-          <h3 className="text-sm font-bold text-text-primary">
-            Job-score classifier
-          </h3>
-          <p className="mt-1 text-xs text-text-secondary">
-            Paste a job description and a target role — get a fit score
-            (0–100) from the model.
-          </p>
-          <div className="mt-3 flex flex-1 flex-col gap-3">
-            <textarea
-              value={scoreText}
-              onChange={(e) => setScoreText(e.target.value)}
-              placeholder="Paste the job description here…"
-              aria-label="Job description for scoring"
-              rows={5}
-              className="w-full flex-1 resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none transition-all duration-150 placeholder:text-text-tertiary focus:border-accent focus:ring-2 focus:ring-accent/30"
-            />
-            <input
-              value={scoreRole}
-              onChange={(e) => setScoreRole(e.target.value)}
-              placeholder="Target role (e.g. Full-stack Developer)"
-              aria-label="Target role"
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none transition-all duration-150 placeholder:text-text-tertiary focus:border-accent focus:ring-2 focus:ring-accent/30"
-            />
-            {scoreResult && (
-              <div className="rounded-lg border border-accent/20 bg-accent/5 p-4 text-center">
-                <p className="text-3xl font-bold text-text-primary">
-                  {scoreResult.score}
-                  <span className="text-base text-text-secondary">/100</span>
-                </p>
-                <p className="mt-1 text-xs text-text-secondary">
-                  fit as <strong>{scoreResult.role}</strong>
-                </p>
-              </div>
-            )}
-            {scoreError && (
-              <p className="text-xs text-error">{scoreError}</p>
-            )}
-            <Button
-              variant="primary"
-              className="w-full"
-              disabled={busy || state === "unavailable" || !scoreText.trim()}
-              onClick={runScore}
-            >
-              {busy ? "Scoring…" : "Score this job"}
-            </Button>
-          </div>
-        </Card>
+      {/* Content */}
+      <div className="mt-2 flex-1">
+        {activeTab === "roles" ? (
+          <RoleFitTab
+            results={roleResults}
+            error={roleError}
+            busy={busy}
+            unavailable={state === "unavailable"}
+            onAnalyse={runRoleFit}
+          />
+        ) : (
+          <ScoreTab
+            text={scoreText}
+            setText={setScoreText}
+            role={scoreRole}
+            setRole={setScoreRole}
+            result={scoreResult}
+            error={scoreError}
+            busy={busy}
+            unavailable={state === "unavailable"}
+            onScore={runScore}
+          />
+        )}
       </div>
     </section>
+  );
+}
+
+/* ── Role Fit sub-tab ── */
+function RoleFitTab({
+  results, error, busy, unavailable, onAnalyse,
+}: {
+  results: RoleFitResult[] | null;
+  error: string | null;
+  busy: boolean;
+  unavailable: boolean;
+  onAnalyse: () => void;
+}) {
+  if (results && results.length > 0) {
+    const maxScore = Math.max(...results.map((r) => r.avgScore));
+    return (
+      <ul className="space-y-1.5">
+        {results.map((r) => (
+          <li key={r.role} className="flex items-center gap-2.5 rounded-lg border border-border-subtle bg-elevated/50 px-2.5 py-2">
+            {/* Score bar */}
+            <div className="h-1.5 w-10 shrink-0 overflow-hidden rounded-full bg-border-subtle">
+              <div
+                className="h-full rounded-full bg-accent transition-all duration-500"
+                style={{ width: `${(r.avgScore / maxScore) * 100}%` }}
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline justify-between gap-1">
+                <span className="truncate text-xs font-semibold text-text-primary">{r.role}</span>
+                <span className="shrink-0 text-xs font-bold text-accent">{r.avgScore}%</span>
+              </div>
+              <p className="text-[10px] text-text-tertiary truncate">
+                {r.applications} app{r.applications === 1 ? "" : "s"} · {r.topTitle}
+              </p>
+            </div>
+          </li>
+        ))}
+        <li className="pt-1">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="w-full"
+            disabled={busy || unavailable}
+            onClick={onAnalyse}
+          >
+            {busy ? "Analysing…" : "Re-analyse"}
+          </Button>
+        </li>
+      </ul>
+    );
+  }
+
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-2 py-4 text-center">
+      <span className="text-2xl opacity-40">🎯</span>
+      <p className="text-xs text-text-tertiary">
+        {error
+          ? error
+          : "Analyse your applications to see which roles you're targeting."}
+      </p>
+      <Button
+        variant="primary"
+        size="sm"
+        className="mt-1"
+        disabled={busy || unavailable}
+        onClick={onAnalyse}
+      >
+        {busy ? "Analysing…" : "Analyse my applications"}
+      </Button>
+    </div>
+  );
+}
+
+/* ── Score Job sub-tab ── */
+function ScoreTab({
+  text, setText, role, setRole, result, error, busy, unavailable, onScore,
+}: {
+  text: string;
+  setText: (v: string) => void;
+  role: string;
+  setRole: (v: string) => void;
+  result: { role: string; score: number } | null;
+  error: string | null;
+  busy: boolean;
+  unavailable: boolean;
+  onScore: () => void;
+}) {
+  return (
+    <div className="flex flex-1 flex-col gap-2">
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Paste a job description…"
+        aria-label="Job description for scoring"
+        rows={4}
+        className="w-full resize-none rounded-lg border border-border bg-surface px-2.5 py-2 text-xs text-text-primary outline-none transition-all placeholder:text-text-tertiary focus:border-accent focus:ring-2 focus:ring-accent/30"
+      />
+      <input
+        value={role}
+        onChange={(e) => setRole(e.target.value)}
+        placeholder="Target role (e.g. Full-stack Developer)"
+        aria-label="Target role"
+        className="w-full rounded-lg border border-border bg-surface px-2.5 py-2 text-xs text-text-primary outline-none transition-all placeholder:text-text-tertiary focus:border-accent focus:ring-2 focus:ring-accent/30"
+      />
+
+      {/* Result */}
+      {result && (
+        <div className="flex items-center gap-3 rounded-lg border border-accent/20 bg-accent/5 p-3">
+          <ScoreRing score={result.score} size={64} />
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-text-primary">
+              {result.score >= 80 ? "🎯 Strong match" :
+               result.score >= 50 ? "👍 Good fit" :
+               result.score >= 30 ? "🤔 Partial fit" :
+               "❌ Poor fit"}
+            </p>
+            <p className="mt-0.5 text-[10px] text-text-tertiary">
+              as <strong className="text-text-secondary">{result.role}</strong>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <p className="rounded-md bg-error/10 px-2 py-1.5 text-[10px] text-error">{error}</p>
+      )}
+
+      <Button
+        variant="primary"
+        size="sm"
+        className="w-full"
+        disabled={busy || unavailable || !text.trim()}
+        onClick={onScore}
+      >
+        {busy ? "Scoring…" : "Score this job"}
+      </Button>
+    </div>
   );
 }
