@@ -18,7 +18,7 @@ interface FollowUpItem {
  * response for 7+ days (applied/screening) or ghosted 3+ days ago, most
  * overdue first. Backed by GET /api/analytics (followUps).
  */
-export function FollowUpPanel() {
+export function FollowUpPanel({ fill }: { fill?: boolean }) {
   const [items, setItems] = useState<FollowUpItem[] | null>(null);
   const [signedOut, setSignedOut] = useState(false);
 
@@ -40,7 +40,7 @@ export function FollowUpPanel() {
 
   if (items === null) {
     return (
-      <Card>
+      <Card className={fill ? "h-full" : ""}>
         <h2 className="text-base font-bold text-text-primary">
           Follow-ups
         </h2>
@@ -51,7 +51,7 @@ export function FollowUpPanel() {
 
   if (items.length === 0) {
     return (
-      <Card>
+      <Card className={fill ? "h-full" : ""}>
         <h2 className="text-base font-bold text-text-primary">
           Follow-ups
         </h2>
@@ -63,7 +63,7 @@ export function FollowUpPanel() {
   }
 
   return (
-    <Card>
+    <Card className={`${fill ? "flex h-full flex-col" : ""}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-base font-bold text-error">
           Needs follow-up
@@ -72,7 +72,7 @@ export function FollowUpPanel() {
           {items.length} overdue
         </span>
       </div>
-      <ul className="mt-3 max-h-[400px] flex flex-col gap-2 overflow-y-auto scrollbar-thin">
+      <ul className="mt-3 flex flex-1 flex-col gap-2 overflow-y-auto scrollbar-thin" style={fill ? { maxHeight: 'none' } : { maxHeight: 400 }}>
         {items.map((it) => (
           <li
             key={it._id}

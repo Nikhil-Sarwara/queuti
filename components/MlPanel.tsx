@@ -19,7 +19,7 @@ type MlState = "idle" | "loading" | "ready" | "unavailable";
  * Runs entirely in the browser via Transformers.js (quantized MNLI,
  * ~25MB, cached after first download). No API keys, no server calls.
  */
-export function MlPanel() {
+export function MlPanel({ fill }: { fill?: boolean }) {
   const [state, setState] = useState<MlState>("idle");
   const [roleResults, setRoleResults] = useState<RoleFitResult[] | null>(null);
   const [roleError, setRoleError] = useState<string | null>(null);
@@ -82,7 +82,7 @@ export function MlPanel() {
         : "Model ready in your browser.";
 
   return (
-    <section className="mt-8">
+    <section className={fill ? "flex h-full flex-col" : "mt-8"}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-bold text-text-primary">Browser ML</h2>
         <Badge tone={state === "ready" ? "interview" : state === "loading" ? "applied" : "rejected"}>

@@ -7,6 +7,7 @@ import { Card, Button } from "@/components/ui";
 import { ObjectId } from "mongodb";
 import { ChangePasswordForm } from "./ChangePasswordForm";
 import { ResendVerificationButton } from "./ResendVerificationButton";
+import { SessionManager } from "@/components/SessionManager";
 
 export const dynamic = "force-dynamic";
 
@@ -93,6 +94,11 @@ export default async function AccountPage() {
           <div className="mt-4">
             <ChangePasswordForm />
           </div>
+        </Card>
+
+        {/* Active Sessions */}
+        <Card>
+          <SessionManager />
         </Card>
       </div>
     </div>

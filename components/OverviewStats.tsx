@@ -24,36 +24,31 @@ interface OverviewData {
   };
 }
 
-interface Stat {
-  icon: string;
-  label: string;
-  value: string;
-  sub?: string;
-}
+const STAGE_META: Record<OverviewStatus, { label: string; color: string; barColor: string }> = {
+  applied:    { label: "Applied",    color: "text-success", barColor: "bg-success" },
+  screening:  { label: "Screening",  color: "text-warning", barColor: "bg-warning" },
+  interview:  { label: "Interview",  color: "text-info",    barColor: "bg-info" },
+  offer:      { label: "Offer",      color: "text-success", barColor: "bg-success" },
+  rejected:   { label: "Rejected",   color: "text-error",   barColor: "bg-error" },
+  ghosted:    { label: "Ghosted",    color: "text-text-secondary", barColor: "bg-text-secondary" },
+};
 
-function StatCard({ stat }: { stat: Stat }) {
-  return (
-    <Card elevation={2} className="flex flex-col items-center text-center p-4">
-      <span className="text-xl">{stat.icon}</span>
-      <p className="mt-2 text-2xl font-bold text-text-primary">
-        {stat.value}
-      </p>
-      <p className="mt-1 text-sm font-medium text-text-secondary">
-        {stat.label}
-      </p>
-      {stat.sub && (
-        <p className="mt-0.5 text-xs text-text-tertiary">{stat.sub}</p>
-      )}
-    </Card>
-  );
+const FUNNEL_ORDER: OverviewStatus[] = [
+  "applied",
+  "screening",
+  "interview",
+  "offer",
+];
+
+function timeAgo(days: number): string {
+  if (days === 0) return "today";
+  if (days === 1) return "1 day";
+  return `${days} days`;
 }
 
 /**
- * Overview stat cards: total applications, active pipeline, interviews,
- * offers, avg response days, response rate.
- *
- * Reads live numbers from GET /api/analytics. On 401 (signed out — e.g. the
- * public home page) renders a sign-in prompt instead of numbers.
+ * Compact overview strip: hero stat + pipeline funnel bar + key metrics.
+ * Reads live from GET /api/analytics.
  */
 export function OverviewStats() {
   const [data, setData] = useState<OverviewData | null>(null);
@@ -117,43 +112,192 @@ export function OverviewStats() {
   const byStatus = Object.fromEntries(
     data.funnel.map((f) => [f.status, f.count])
   );
-  const activePipeline = (byStatus.applied ?? 0) + (byStatus.screening ?? 0) + (byStatus.interview ?? 0);
-  const interviews = byStatus.interview ?? 0;
-  const offers = data.totals.offers;
   const total = data.totals.total;
+  const activePipeline =
+    (byStatus.applied ?? 0) + (byStatus.screening ?? 0) + (byStatus.interview ?? 0);
+  const interviews = byStatus.interview ?? 0;
+  const screening = byStatus.screening ?? 0;
+  const offers = data.totals.offers;
+  const rejected = data.totals.rejected ?? 0;
+  const ghosted = data.totals.ghosted;
   const responseRate = total
     ? Math.round((data.totals.responded / total) * 100)
     : 0;
+  const offerRate = total ? Math.round((offers / total) * 100) : 0;
+  const ghostRate = total ? Math.round((ghosted / total) * 100) : 0;
 
-  const stats: Stat[] = [
-    { icon: "📥", label: "Total applications", value: String(total) },
-    {
-      icon: "🧭",
-      label: "Active pipeline",
-      value: String(activePipeline),
-      sub: "applied · screening · interview",
-    },
-    { icon: "🤝", label: "Interviews", value: String(interviews) },
-    { icon: "🏆", label: "Offers", value: String(offers) },
-    {
-      icon: "⏱️",
-      label: "Avg response",
-      value: data.avgResponseDays === null ? "—" : `${data.avgResponseDays}d`,
-      sub: data.respondedCount ? `${data.respondedCount} responded` : undefined,
-    },
-    { icon: "📈", label: "Response rate", value: `${responseRate}%` },
-  ];
+  // Funnel bar segments
+  const funnelCounts = FUNNEL_ORDER.map((s) => byStatus[s] ?? 0);
+  const funnelTotal = Math.max(1, funnelCounts.reduce((a, b) => a + b, 0));
 
   return (
     <section className="mt-8">
-      <h2 className="text-lg font-bold text-text-primary">
-        Overview
-      </h2>
-      <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        {stats.map((s) => (
-          <StatCard key={s.label} stat={s} />
-        ))}
+      {/* ── Row 1: Hero + Pipeline funnel bar + Key metrics ── */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch">
+        {/* Hero stat + funnel bar */}
+        <Card className="flex flex-1 flex-col justify-between p-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-text-primary">{total}</span>
+              <span className="text-sm font-medium text-text-secondary">applications</span>
+            </div>
+            <span className="text-xs text-text-tertiary">
+              {responseRate}% response · {offerRate}% offer
+            </span>
+          </div>
+
+          {/* Inline pipeline funnel */}
+          <div className="mt-3">
+            <div className="mb-1.5 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-text-tertiary">
+              <span>Pipeline</span>
+              <span>{activePipeline} active</span>
+            </div>
+            <div className="flex h-5 overflow-hidden rounded-md border border-border-subtle">
+              {funnelCounts.map((count, i) => {
+                const pct = (count / funnelTotal) * 100;
+                if (pct === 0) return null;
+                const stage = FUNNEL_ORDER[i];
+                return (
+                  <div
+                    key={stage}
+                    className={`${STAGE_META[stage].barColor} relative flex items-center justify-center transition-all duration-500`}
+                    style={{ width: `${pct}%` }}
+                    title={`${STAGE_META[stage].label}: ${count}`}
+                  >
+                    {pct > 8 && (
+                      <span className="text-[10px] font-bold text-white drop-shadow-sm">
+                        {count}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {/* Funnel legend */}
+            <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5">
+              {FUNNEL_ORDER.map((stage) => {
+                const count = byStatus[stage] ?? 0;
+                if (count === 0) return null;
+                return (
+                  <span key={stage} className="flex items-center gap-1 text-[10px] text-text-tertiary">
+                    <span className={`h-1.5 w-1.5 rounded-full ${STAGE_META[stage].barColor}`} />
+                    {STAGE_META[stage].label}
+                    <span className="font-semibold text-text-secondary">{count}</span>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        </Card>
+
+        {/* Key metrics — 2×2 compact grid */}
+        <div className="grid grid-cols-2 gap-3 lg:w-[320px]">
+          <MetricPill
+            icon="🤝"
+            value={String(interviews)}
+            label="Interviews"
+            accent={interviews > 0}
+          />
+          <MetricPill
+            icon="🏆"
+            value={String(offers)}
+            label="Offers"
+            accent={offers > 0}
+          />
+          <MetricPill
+            icon="⏱️"
+            value={data.avgResponseDays === null ? "—" : `${data.avgResponseDays}d`}
+            label="Avg response"
+          />
+          <MetricPill
+            icon="👻"
+            value={`${ghostRate}%`}
+            label="Ghosted"
+            muted={ghostRate < 10}
+          />
+        </div>
       </div>
+
+      {/* ── Row 2: Conversion funnel strip ── */}
+      <Card className="mt-3 p-4">
+        <div className="mb-2 flex items-center justify-between">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-text-secondary">
+            Conversion funnel
+          </h3>
+          <span className="text-[10px] text-text-tertiary">
+            Applied → Screening → Interview → Offer
+          </span>
+        </div>
+        <div className="flex items-center gap-0">
+          {FUNNEL_ORDER.map((stage, i) => {
+            const count = byStatus[stage] ?? 0;
+            const convRate = total > 0 ? Math.round((count / total) * 100) : 0;
+            const prevCount = i > 0 ? (byStatus[FUNNEL_ORDER[i - 1]] ?? 0) : total;
+            const stageConvRate = prevCount > 0 ? Math.round((count / prevCount) * 100) : 0;
+
+            return (
+              <div key={stage} className="flex flex-1 items-center">
+                {/* Stage block */}
+                <div className="flex flex-1 flex-col items-center">
+                  <span className={`text-lg font-bold ${STAGE_META[stage].color}`}>
+                    {count}
+                  </span>
+                  <span className="mt-0.5 text-[10px] font-semibold text-text-secondary">
+                    {STAGE_META[stage].label}
+                  </span>
+                  <span className="text-[10px] text-text-tertiary">
+                    {convRate}%
+                  </span>
+                </div>
+                {/* Arrow */}
+                {i < FUNNEL_ORDER.length - 1 && (
+                  <div className="flex flex-col items-center px-1">
+                    <span className="text-[10px] font-bold text-text-tertiary">
+                      {stageConvRate}%
+                    </span>
+                    <span className="text-text-tertiary">→</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </Card>
     </section>
+  );
+}
+
+/* ── Compact metric pill ── */
+function MetricPill({
+  icon,
+  value,
+  label,
+  accent = false,
+  muted = false,
+}: {
+  icon: string;
+  value: string;
+  label: string;
+  accent?: boolean;
+  muted?: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-center gap-2.5 rounded-lg border px-3 py-2.5 transition-all duration-150 ${
+        accent
+          ? "border-accent/20 bg-accent/5"
+          : muted
+            ? "border-border-subtle bg-elevated/50 opacity-70"
+            : "border-border-subtle bg-elevated"
+      }`}
+    >
+      <span className="text-base">{icon}</span>
+      <div className="min-w-0">
+        <p className={`text-sm font-bold leading-tight ${muted ? "text-text-tertiary" : "text-text-primary"}`}>
+          {value}
+        </p>
+        <p className="text-[10px] font-medium text-text-tertiary truncate">{label}</p>
+      </div>
+    </div>
   );
 }

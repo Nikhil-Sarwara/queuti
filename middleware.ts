@@ -47,6 +47,20 @@ export async function middleware(req: NextRequest) {
         } else {
           res = NextResponse.next();
         }
+        // Touch session in background (fire-and-forget via internal API).
+        // Cannot import MongoDB modules in Edge runtime, so we POST to an
+        // internal endpoint that handles the DB update.
+        if (token) {
+          const origin = new URL(req.url).origin;
+          fetch(`${origin}/api/auth/sessions/touch`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Cookie: req.headers.get("cookie") || "",
+            },
+            body: JSON.stringify({ token }),
+          }).catch(() => {});
+        }
       }
     }
 

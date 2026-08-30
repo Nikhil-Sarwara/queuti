@@ -48,29 +48,29 @@ export default async function DashboardPage() {
           <OverviewStats />
         </div>
 
-        {/* Row 2: Kanban / Table (2 cols) + Upcoming Interviews (1 col) */}
-        <div className="lg:col-span-2">
+        {/* Row 2: Kanban (2 cols) + Upcoming Interviews (1 col) — stretch to fill row height */}
+        <div className="lg:col-span-2 lg:row-span-2">
           <KanbanBoard />
         </div>
-        <div className="lg:col-span-1">
-          <UpcomingInterviews />
+        <div className="flex flex-col lg:col-span-1 lg:row-span-2">
+          <div className="flex-1"><UpcomingInterviews fill /></div>
         </div>
 
-        {/* Row 3: Follow-up + Companies + ML */}
-        <div className="lg:col-span-2">
-          <FollowUpPanel />
+        {/* Row 3: Follow-ups (2 cols) + Companies & ML (1 col) */}
+        <div className="flex flex-col lg:col-span-2">
+          <div className="flex-1"><FollowUpPanel /></div>
         </div>
-        <div className="lg:col-span-1 space-y-4">
-          <CompaniesPanel />
-          <MlPanel />
+        <div className="flex flex-col gap-4 lg:col-span-1">
+          <div className="flex-1"><CompaniesPanel fill /></div>
+          <div className="flex-1"><MlPanel fill /></div>
         </div>
 
-        {/* Row 4: Analytics + Market Intel + System Status */}
+        {/* Row 4: Analytics (2 cols) + System Status (1 col) */}
         <div className="lg:col-span-2">
           <AnalyticsDashboard />
         </div>
-        <div className="lg:col-span-1">
-          <SystemStatusCard />
+        <div className="flex flex-col lg:col-span-1">
+          <div className="flex-1"><SystemStatusCard fill /></div>
         </div>
       </div>
 

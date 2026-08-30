@@ -117,6 +117,7 @@ export const COLLECTIONS = {
   events: "events",
   contacts: "contacts",
   companies: "companies",
+  sessions: "sessions",
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];
@@ -135,6 +136,23 @@ export const events = () => getCollection<ApplicationEvent>(COLLECTIONS.events);
 export const contacts = () => getCollection<Contact>(COLLECTIONS.contacts);
 export const companies = () => getCollection<Company>(COLLECTIONS.companies);
 
+/** An active login session — tracks device, IP, browser, timestamps. */
+export interface Session {
+  _id?: ObjectId;
+  userId: ObjectId;
+  tokenHash: string;
+  userAgent?: string;
+  ip?: string;
+  browser?: string;
+  os?: string;
+  device?: "desktop" | "mobile" | "tablet" | "unknown";
+  lastActiveAt: Date;
+  createdAt: Date;
+  expiresAt: Date;
+}
+
+export const sessions = () => getCollection<Session>(COLLECTIONS.sessions);
+
 // ---------- Indexes (idempotent, run at startup) ----------
 
 export async function ensureIndexes(): Promise<void> {
@@ -143,11 +161,14 @@ export async function ensureIndexes(): Promise<void> {
     events(),
     users(),
   ]);
+  const sessionCol = await sessions();
   await Promise.all([
     appCol.createIndex({ userId: 1, dateApplied: -1 }),
     appCol.createIndex({ userId: 1, status: 1 }),
     evCol.createIndex({ applicationId: 1, occurredAt: -1 }),
     usrCol.createIndex({ email: 1 }, { unique: true }),
+    sessionCol.createIndex({ userId: 1, createdAt: -1 }),
+    sessionCol.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
   ]);
 }
 

@@ -45,7 +45,7 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
  * /api/companies and /api/contacts; applications linked by company name
  * are counted per company so the tracker relationship is visible.
  */
-export function CompaniesPanel() {
+export function CompaniesPanel({ fill }: { fill?: boolean }) {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [appCounts, setAppCounts] = useState<Record<string, number>>({});
@@ -192,7 +192,7 @@ export function CompaniesPanel() {
     "w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-text-primary outline-none transition-all duration-150 placeholder:text-text-tertiary focus:border-accent focus:ring-2 focus:ring-accent/30";
 
   return (
-    <section className="mt-8">
+    <section className={fill ? "flex h-full flex-col" : "mt-8"}>
       <h2 className="text-lg font-bold text-text-primary">
         Companies & Contacts
       </h2>

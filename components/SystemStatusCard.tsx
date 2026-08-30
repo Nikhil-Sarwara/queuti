@@ -6,7 +6,7 @@ import { Card } from "@/components/ui";
  * recent recorded errors (in-process ring buffer from lib/logging).
  * Server component — reads the Node-runtime error buffer directly.
  */
-export default function SystemStatusCard() {
+export default function SystemStatusCard({ fill }: { fill?: boolean }) {
   const uptime = getUptime();
   const errors = getLastErrors(5);
 
@@ -18,7 +18,7 @@ export default function SystemStatusCard() {
   };
 
   return (
-    <Card>
+    <Card className={fill ? "flex h-full flex-col" : undefined}>
       <h2 className="text-base font-bold text-text-primary">System status</h2>
       <p className="mt-1 text-xs text-text-secondary">
         Uptime <span className="font-semibold text-success">{fmt(uptime)}</span> ·{" "}

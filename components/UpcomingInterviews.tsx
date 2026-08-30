@@ -50,7 +50,7 @@ function daysAway(iso: string) {
  * Upcoming interviews & screenings — events in the next 14 days, sorted by
  * date, rendered as a card grid.
  */
-export function UpcomingInterviews() {
+export function UpcomingInterviews({ fill }: { fill?: boolean }) {
   const [events, setEvents] = useState<UpcomingEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -69,11 +69,11 @@ export function UpcomingInterviews() {
   }, []);
 
   return (
-    <section className="mt-8">
+    <section className={fill ? "flex h-full flex-col" : "mt-8"}>
       <h2 className="text-lg font-bold text-text-primary">
         Upcoming interviews & screenings
       </h2>
-      <div className="mt-3">
+      <div className="mt-3 flex flex-1 flex-col">
         {loading ? (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3" aria-busy="true" aria-label="Loading upcoming events">
             {[0, 1, 2].map((i) => (

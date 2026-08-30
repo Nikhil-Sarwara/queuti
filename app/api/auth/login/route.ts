@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { users } from "@/lib/models";
 import { verifyPassword, signSession, sessionCookieOptions } from "@/lib/auth";
+import { createSession } from "@/lib/session";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +42,9 @@ export async function POST(req: Request) {
     userId: user._id!.toHexString(),
     email: user.email,
   });
+
+  // Record the session in MongoDB
+  await createSession(user._id!.toHexString(), token, req);
 
   const res = NextResponse.json({
     token,

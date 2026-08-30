@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Badge, Button, Card, TextField } from "@/components/ui";
 import { ApplicationsTable } from "@/components/ApplicationsTable";
 import { RoleFitScore } from "@/components/RoleFitScore";
 import { toast } from "@/lib/toast";
+import { STATUS_TONE_CLS } from "@/lib/tones";
 
 export type AppStatus =
   | "applied"
@@ -41,15 +42,13 @@ const STATUSES: AppStatus[] = [
   "ghosted",
 ];
 
-import { STATUS_TONE_CLS } from "@/lib/tones";
-
-const COLUMN_META: Record<AppStatus, { label: string; cls: string }> = {
-  applied: { label: "Applied", cls: STATUS_TONE_CLS.applied },
-  screening: { label: "Screening", cls: STATUS_TONE_CLS.screening },
-  interview: { label: "Interview", cls: STATUS_TONE_CLS.interview },
-  offer: { label: "Offer", cls: STATUS_TONE_CLS.offer },
-  rejected: { label: "Rejected", cls: STATUS_TONE_CLS.rejected },
-  ghosted: { label: "Ghosted", cls: STATUS_TONE_CLS.ghosted },
+const COLUMN_META: Record<AppStatus, { label: string; cls: string; borderCls: string; bgCls: string }> = {
+  applied:    { label: "Applied",    cls: STATUS_TONE_CLS.applied,    borderCls: "border-l-success",   bgCls: "bg-success/5" },
+  screening:  { label: "Screening",  cls: STATUS_TONE_CLS.screening,  borderCls: "border-l-warning",   bgCls: "bg-warning/5" },
+  interview:  { label: "Interview",  cls: STATUS_TONE_CLS.interview,  borderCls: "border-l-info",      bgCls: "bg-info/5" },
+  offer:      { label: "Offer",      cls: STATUS_TONE_CLS.offer,      borderCls: "border-l-success",   bgCls: "bg-success/5" },
+  rejected:   { label: "Rejected",   cls: STATUS_TONE_CLS.rejected,   borderCls: "border-l-error",     bgCls: "bg-error/5" },
+  ghosted:    { label: "Ghosted",    cls: STATUS_TONE_CLS.ghosted,    borderCls: "border-l-text-secondary", bgCls: "bg-text-secondary/5" },
 };
 
 const EMPTY_FORM = {
@@ -86,6 +85,55 @@ function fmtDate(iso: string) {
   }
 }
 
+function loadCollapsed(): Set<AppStatus> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem("queuti-collapsed-columns");
+    if (raw) return new Set(JSON.parse(raw));
+  } catch { /* ignore */ }
+  return new Set();
+}
+
+function saveCollapsed(s: Set<AppStatus>) {
+  try {
+    localStorage.setItem("queuti-collapsed-columns", JSON.stringify(Array.from(s)));
+  } catch { /* ignore */ }
+}
+
+function loadCompact(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem("queuti-compact-mode") === "true";
+  } catch { return false; }
+}
+
+function saveCompact(v: boolean) {
+  try {
+    localStorage.setItem("queuti-compact-mode", String(v));
+  } catch { /* ignore */ }
+}
+
+/* ---------- column search hook ---------- */
+
+function useColumnSearch() {
+  const [searches, setSearches] = useState<Record<string, string>>({});
+  const set = (status: AppStatus, v: string) =>
+    setSearches((prev) => ({ ...prev, [status]: v }));
+  const clear = (status: AppStatus) =>
+    setSearches((prev) => ({ ...prev, [status]: "" }));
+  const matches = (status: AppStatus, app: KanbanApp) => {
+    const q = (searches[status] || "").trim().toLowerCase();
+    if (!q) return true;
+    return (
+      app.title.toLowerCase().includes(q) ||
+      app.companyName.toLowerCase().includes(q)
+    );
+  };
+  return { searches, set, clear, matches };
+}
+
+/* ---------- main component ---------- */
+
 export function KanbanBoard() {
   const [apps, setApps] = useState<KanbanApp[]>([]);
   const [view, setView] = useState<"board" | "table" | "archived">("board");
@@ -109,6 +157,45 @@ export function KanbanBoard() {
   const [importDupes, setImportDupes] = useState<string[]>([]);
   const [dragging, setDragging] = useState(false);
 
+  // --- new state ---
+  const [compact, setCompact] = useState(false);
+  const [collapsed, setCollapsed] = useState<Set<AppStatus>>(new Set());
+  const [collapsedReady, setCollapsedReady] = useState(false);
+  const [focusedCardId, setFocusedCardId] = useState<string | null>(null);
+  const colSearch = useColumnSearch();
+  const boardRef = useRef<HTMLDivElement>(null);
+
+  // load persisted state
+  useEffect(() => {
+    setCollapsed(loadCollapsed());
+    setCollapsedReady(true);
+    setCompact(loadCompact());
+  }, []);
+
+  // persist collapsed
+  useEffect(() => {
+    if (collapsedReady) saveCollapsed(collapsed);
+  }, [collapsed, collapsedReady]);
+
+  // persist compact
+  useEffect(() => {
+    saveCompact(compact);
+  }, [compact]);
+
+  const toggleCompact = () => setCompact((c) => !c);
+
+  const toggleCollapsed = (s: AppStatus) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(s)) next.delete(s);
+      else next.add(s);
+      return next;
+    });
+
+  const collapseAll = () => setCollapsed(new Set(STATUSES));
+  const expandAll = () => setCollapsed(new Set());
+
+  // data loading
   const load = useCallback(async () => {
     try {
       const data = await api<{ applications: KanbanApp[] }>("/api/applications");
@@ -170,25 +257,30 @@ export function KanbanBoard() {
     }
   }
 
-  async function move(app: KanbanApp, dir: -1 | 1) {
-    const i = STATUSES.indexOf(app.status);
-    const next = STATUSES[i + dir];
-    if (!next) return;
+  const moveToStatus = useCallback(async (app: KanbanApp, target: AppStatus) => {
+    if (target === app.status) return;
     setBusyId(app._id);
     setError("");
     try {
       const { application } = await api<{ application: KanbanApp }>(
         `/api/applications/${app._id}`,
-        { method: "PATCH", body: JSON.stringify({ status: next }) }
+        { method: "PATCH", body: JSON.stringify({ status: target }) }
       );
       setApps((prev) => prev.map((a) => (a._id === app._id ? application : a)));
-      toast(`Moved to ${next}`, "success");
+      toast(`Moved to ${COLUMN_META[target].label}`, "success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to move");
     } finally {
       setBusyId("");
     }
-  }
+  }, []);
+
+  const move = useCallback(async (app: KanbanApp, dir: -1 | 1) => {
+    const i = STATUSES.indexOf(app.status);
+    const next = STATUSES[i + dir];
+    if (!next) return;
+    await moveToStatus(app, next);
+  }, [moveToStatus]);
 
   async function restore(app: KanbanApp) {
     setRestoringId(app._id);
@@ -308,23 +400,27 @@ export function KanbanBoard() {
     hiddenStatuses.size > 0 || companyQ.trim() !== "" || dateFrom !== "" || dateTo !== "";
 
   const need = companyQ.trim().toLowerCase();
-  const visible = apps.filter((a) => {
+  const visible = useMemo(() => apps.filter((a) => {
     if (hiddenStatuses.has(a.status)) return false;
     if (need && !a.companyName.toLowerCase().includes(need)) return false;
     const day = a.dateApplied.slice(0, 10);
     if (dateFrom && day < dateFrom) return false;
     if (dateTo && day > dateTo) return false;
     return true;
-  });
-  const visibleSorted = [...visible];
-  if (boardSort === "date-desc") visibleSorted.sort((a, b) => b.dateApplied.localeCompare(a.dateApplied));
-  else if (boardSort === "updated-desc") visibleSorted.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  else if (boardSort === "followup") {
-    visibleSorted.sort((a, b) => {
-      if (a.needsFollowUp !== b.needsFollowUp) return a.needsFollowUp ? -1 : 1;
-      return a.dateApplied.localeCompare(b.dateApplied);
-    });
-  } else visibleSorted.sort((a, b) => a.updatedAt.localeCompare(b.updatedAt));
+  }), [apps, hiddenStatuses, need, dateFrom, dateTo]);
+
+  const visibleSorted = useMemo(() => {
+    const arr = [...visible];
+    if (boardSort === "date-desc") arr.sort((a, b) => b.dateApplied.localeCompare(a.dateApplied));
+    else if (boardSort === "updated-desc") arr.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    else if (boardSort === "followup") {
+      arr.sort((a, b) => {
+        if (a.needsFollowUp !== b.needsFollowUp) return a.needsFollowUp ? -1 : 1;
+        return a.dateApplied.localeCompare(b.dateApplied);
+      });
+    } else arr.sort((a, b) => a.updatedAt.localeCompare(b.updatedAt));
+    return arr;
+  }, [visible, boardSort]);
 
   const resetFilters = () => {
     setHiddenStatuses(new Set());
@@ -334,7 +430,48 @@ export function KanbanBoard() {
     setBoardSort("date-desc");
   };
 
-  const byStatus = (s: AppStatus) => visibleSorted.filter((a) => a.status === s);
+  const byStatus = useCallback((s: AppStatus) =>
+    visibleSorted.filter((a) => a.status === s && colSearch.matches(s, a)),
+    [visibleSorted, colSearch]
+  );
+
+  const byStatusAll = useCallback((s: AppStatus) =>
+    visibleSorted.filter((a) => a.status === s),
+    [visibleSorted]
+  );
+
+  /* keyboard navigation */
+  const handleCardKeyDown = useCallback((e: React.KeyboardEvent, app: KanbanApp) => {
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      move(app, -1);
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      move(app, 1);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      window.location.href = `/applications/${app._id}`;
+    }
+  }, [move]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        // clear any active column search
+        let cleared = false;
+        for (const s of STATUSES) {
+          if ((colSearch.searches[s] || "") !== "") {
+            colSearch.clear(s);
+            cleared = true;
+          }
+        }
+        if (cleared) return;
+        setFocusedCardId(null);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [colSearch]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -398,7 +535,6 @@ export function KanbanBoard() {
               </Button>
             </div>
 
-            {/* drag & drop zone */}
             <div
               onDragOver={(e) => {
                 e.preventDefault();
@@ -480,8 +616,8 @@ export function KanbanBoard() {
         </Card>
       ) : (
         <>
-          {/* board / ledger / archive toggle */}
-          <div className="flex items-center justify-between gap-3">
+          {/* board / ledger / archive toggle + view controls */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="inline-flex rounded-lg border border-border bg-elevated p-1">
               {(["board", "table", "archived"] as const).map((v) => (
                 <button
@@ -499,13 +635,15 @@ export function KanbanBoard() {
                 </button>
               ))}
             </div>
-            <p className="hidden text-xs text-text-tertiary sm:block">
-              {view === "board"
-                ? "← → to move applications between stages"
-                : view === "archived"
-                  ? "restore or revisit archived applications"
-                  : "search · filter · bulk edit · sort"}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="hidden text-xs text-text-tertiary sm:block">
+                {view === "board"
+                  ? "← → to move · Enter to open"
+                  : view === "archived"
+                    ? "restore or revisit archived applications"
+                    : "search · filter · bulk edit · sort"}
+              </p>
+            </div>
           </div>
 
           {view === "archived" ? (
@@ -637,6 +775,30 @@ export function KanbanBoard() {
                     </select>
                   </div>
                   <div className="flex items-center gap-2">
+                    {/* Compact mode toggle */}
+                    <button
+                      type="button"
+                      onClick={toggleCompact}
+                      aria-pressed={compact}
+                      title={compact ? "Switch to detailed view" : "Switch to compact view"}
+                      className={`inline-flex items-center justify-center rounded-lg border px-2.5 py-1.5 text-xs font-bold transition-all duration-150 ${
+                        compact
+                          ? "border-accent bg-accent/10 text-accent"
+                          : "border-border bg-elevated text-text-secondary hover:text-text-primary hover:bg-surface"
+                      }`}
+                    >
+                      {compact ? "☰ Compact" : "☰ Compact"}
+                    </button>
+                    {/* Collapse / Expand all */}
+                    <button
+                      type="button"
+                      onClick={collapsed.size === STATUSES.length ? expandAll : collapseAll}
+                      className="inline-flex items-center justify-center rounded-lg border border-border bg-elevated px-2.5 py-1.5 text-xs font-bold text-text-secondary transition-all duration-150 hover:text-text-primary hover:bg-surface"
+                    >
+                      {collapsed.size === STATUSES.length ? "▾ Expand all" : "▴ Collapse all"}
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
                     {filtersActive && (
                       <Button type="button" variant="secondary" size="sm" onClick={resetFilters}>
                         Reset filters
@@ -649,105 +811,276 @@ export function KanbanBoard() {
                 </div>
               </Card>
 
-              {/* Kanban columns — horizontal scroll */}
-              <div className="flex gap-4 overflow-x-auto pb-2">
-                {STATUSES.filter((s) => !hiddenStatuses.has(s)).map((s) => (
-                  <div key={s} className="flex min-w-[280px] flex-col gap-2">
-                    <div className={`rounded-lg px-3 py-2 text-center text-xs font-bold uppercase tracking-widest shadow-1 ${COLUMN_META[s].cls}`}>
-                      {COLUMN_META[s].label}
-                      <span className="ml-1.5 rounded-full bg-elevated/60 px-1.5 text-[10px]">
-                        {byStatus(s).length}
-                      </span>
-                    </div>
-                    <div className="flex min-h-[120px] max-h-[500px] flex-col gap-2 rounded-lg border border-border-subtle bg-elevated/50 p-2 scrollbar-thin overflow-y-auto">
-                      {byStatus(s).length === 0 && (
-                        <p className="p-2 text-center text-xs italic text-text-tertiary">
-                          {filtersActive ? "no matches" : "empty slot"}
-                        </p>
-                      )}
-                      {byStatus(s).map((app) => (
-                        <Card key={app._id} className="!p-3">
-                          <div className="flex items-start justify-between gap-1">
-                            <Link
-                              href={`/applications/${app._id}`}
-                              className="text-sm font-bold leading-tight text-text-primary underline-offset-2 hover:text-accent hover:underline"
-                            >
-                              {app.title}
-                            </Link>
-                            <Badge tone={app.status} dot className="shrink-0 !px-1.5 !text-[10px]" />
-                          </div>
-                          {app.needsFollowUp && (
-                            <p className="mt-1 inline-block rounded-full border border-error/30 bg-error/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-error">
-                              Follow up
-                            </p>
-                          )}
-                          {app.companyName && (
-                            <p className="mt-0.5 text-xs font-semibold text-text-secondary">{app.companyName}</p>
-                          )}
-                          <p className="mt-1 text-xs text-text-tertiary">
-                            {fmtDate(app.dateApplied)}
-                            {app.source && <> · <span className="uppercase">{app.source}</span></>}
-                          </p>
-                          {app.salary && (
-                            <p className="mt-0.5 text-xs font-semibold text-success">{app.salary}</p>
-                          )}
-                          {app.jd && (
-                            <p className="mt-1">
-                              <RoleFitScore jd={app.jd} />
-                            </p>
-                          )}
-                          {app.notes && (
-                            <p className="mt-1 line-clamp-2 text-xs italic text-text-tertiary">{app.notes}</p>
-                          )}
-                          {app.applyUrl && (
-                            <a
-                              href={app.applyUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="mt-1 inline-block text-xs font-semibold text-accent underline decoration-accent/50 underline-offset-2 hover:text-text-primary"
-                            >
-                              view posting ↗
-                            </a>
-                          )}
-                          <div className="mt-2 flex items-center justify-between gap-1">
-                            <div className="flex gap-1">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                disabled={STATUSES.indexOf(app.status) === 0 || busyId === app._id}
-                                onClick={() => move(app, -1)}
-                                title="Move left"
-                                aria-label={`Move ${app.title} to previous stage`}
+              {/* Kanban columns — responsive */}
+              <div
+                ref={boardRef}
+                className="flex gap-4 overflow-x-auto pb-2 max-sm:flex-col max-sm:overflow-x-hidden sm:flex-row"
+              >
+                {STATUSES.filter((s) => !hiddenStatuses.has(s)).map((s) => {
+                  const allInColumn = byStatusAll(s);
+                  const filtered = byStatus(s);
+                  const isCollapsed = collapsed.has(s);
+                  const isFiltered = filtered.length !== allInColumn.length && (colSearch.searches[s] || "").trim() !== "";
+                  const hasSearch = (colSearch.searches[s] || "").trim() !== "";
+
+                  return (
+                    <div
+                      key={s}
+                      className={`flex min-w-0 max-sm:min-w-full sm:min-w-[280px] flex-col gap-2 transition-all duration-300 ease-in-out ${COLUMN_META[s].bgCls} rounded-lg border-l-4 ${COLUMN_META[s].borderCls}`}
+                    >
+                      {/* Column header — sticky, clickable to collapse */}
+                      <button
+                        type="button"
+                        onClick={() => toggleCollapsed(s)}
+                        className="sticky top-0 z-10 flex items-center justify-between rounded-t-lg px-3 py-2 text-left text-xs font-bold uppercase tracking-widest transition-all duration-150 hover:brightness-110"
+                        aria-expanded={!isCollapsed}
+                        style={{ backgroundColor: "inherit" }}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span>{COLUMN_META[s].label}</span>
+                          <span className="rounded-full bg-elevated/80 px-1.5 py-0.5 text-[10px]">
+                            {allInColumn.length}
+                          </span>
+                        </div>
+                        <span className="text-text-tertiary text-sm transition-transform duration-200">
+                          {isCollapsed ? "▸" : "▾"}
+                        </span>
+                      </button>
+
+                      {/* Column body — animated collapse */}
+                      <div
+                        className={`flex min-h-[120px] flex-col gap-2 overflow-hidden px-2 pb-2 transition-all duration-300 ease-in-out ${
+                          isCollapsed ? "max-h-0 min-h-0 opacity-0" : `max-h-[calc(100vh-320px)] opacity-100`
+                        }`}
+                        style={{
+                          maskImage: "linear-gradient(to bottom, black 85%, transparent 100%)",
+                          WebkitMaskImage: "linear-gradient(to bottom, black 85%, transparent 100%)",
+                        }}
+                      >
+                        {/* Per-column search */}
+                        <div className="flex items-center gap-1 px-1 pt-1">
+                          <div className="relative flex-1">
+                            <input
+                              type="text"
+                              value={colSearch.searches[s] || ""}
+                              onChange={(e) => colSearch.set(s, e.target.value)}
+                              placeholder={`Search ${COLUMN_META[s].label.toLowerCase()}…`}
+                              className="w-full rounded-md border border-border-subtle bg-surface px-2.5 py-1.5 text-xs text-text-primary outline-none transition-all duration-150 placeholder:text-text-tertiary focus:border-accent focus:ring-1 focus:ring-accent/30"
+                              aria-label={`Search ${COLUMN_META[s].label} column`}
+                            />
+                            {hasSearch && (
+                              <button
+                                type="button"
+                                onClick={() => colSearch.clear(s)}
+                                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary transition-colors"
+                                aria-label="Clear search"
                               >
-                                ←
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                disabled={STATUSES.indexOf(app.status) === STATUSES.length - 1 || busyId === app._id}
-                                onClick={() => move(app, 1)}
-                                title="Move right"
-                                aria-label={`Move ${app.title} to next stage`}
-                              >
-                                →
-                              </Button>
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              disabled={busyId === app._id}
-                              onClick={() => archive(app)}
-                              title="Archive (soft delete — restore later)"
-                              aria-label={`Archive ${app.title}`}
-                            >
-                              ✕
-                            </Button>
+                                ×
+                              </button>
+                            )}
                           </div>
-                        </Card>
-                      ))}
+                        </div>
+
+                        {/* Cards */}
+                        {allInColumn.length === 0 && !filtersActive ? (
+                          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border-subtle bg-surface/50 p-6 text-center">
+                            <span className="text-2xl text-text-tertiary">+</span>
+                            <p className="mt-1 text-xs text-text-tertiary">Drop or add applications here</p>
+                          </div>
+                        ) : isFiltered && filtered.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center rounded-lg border border-border-subtle bg-surface/50 p-6 text-center">
+                            <span className="text-lg text-text-tertiary">⊘</span>
+                            <p className="mt-1 text-xs text-text-tertiary">No matches for current filters</p>
+                          </div>
+                        ) : filtered.length === 0 && allInColumn.length > 0 && filtersActive ? (
+                          <div className="flex flex-col items-center justify-center rounded-lg border border-border-subtle bg-surface/50 p-6 text-center">
+                            <span className="text-lg text-text-tertiary">⊘</span>
+                            <p className="mt-1 text-xs text-text-tertiary">No matches for current filters</p>
+                          </div>
+                        ) : (
+                          <>
+                            {filtered.map((app) => (
+                              compact ? (
+                                /* ---------- COMPACT CARD ---------- */
+                                <div
+                                  key={app._id}
+                                  tabIndex={0}
+                                  role="button"
+                                  aria-label={`${app.title}${app.companyName ? ` at ${app.companyName}` : ""} — ${COLUMN_META[app.status].label}`}
+                                  onKeyDown={(e) => handleCardKeyDown(e, app)}
+                                  className={`group relative flex items-center gap-2 rounded-lg border border-l-4 border-border bg-surface px-3 py-2 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-2 focus-visible:ring-2 focus-visible:ring-accent ${COLUMN_META[app.status].borderCls} ${
+                                    focusedCardId === app._id ? "ring-2 ring-accent" : ""
+                                  }`}
+                                >
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm font-bold text-text-primary">{app.title}</p>
+                                    {app.companyName && (
+                                      <p className="truncate text-xs text-text-secondary">{app.companyName}</p>
+                                    )}
+                                  </div>
+                                  {app.needsFollowUp && (
+                                    <span className="animate-pulse inline-flex items-center rounded-full border border-error/30 bg-error/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-error">
+                                      Follow up
+                                    </span>
+                                  )}
+                                  <Badge tone={app.status} dot className="shrink-0 !px-1.5 !text-[10px]" />
+                                  {/* hover actions */}
+                                  <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                                    <select
+                                      value={app.status}
+                                      onChange={(e) => moveToStatus(app, e.target.value as AppStatus)}
+                                      disabled={busyId === app._id}
+                                      className="rounded border border-border bg-surface px-1 py-0.5 text-[10px] text-text-primary outline-none focus:border-accent"
+                                      aria-label={`Change status for ${app.title}`}
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {STATUSES.map((st) => (
+                                        <option key={st} value={st}>{COLUMN_META[st].label}</option>
+                                      ))}
+                                    </select>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      disabled={STATUSES.indexOf(app.status) === 0 || busyId === app._id}
+                                      onClick={(e) => { e.stopPropagation(); move(app, -1); }}
+                                      title="Move left"
+                                      className="!h-6 !px-1.5 text-[10px]"
+                                    >
+                                      ←
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      disabled={STATUSES.indexOf(app.status) === STATUSES.length - 1 || busyId === app._id}
+                                      onClick={(e) => { e.stopPropagation(); move(app, 1); }}
+                                      title="Move right"
+                                      className="!h-6 !px-1.5 text-[10px]"
+                                    >
+                                      →
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      disabled={busyId === app._id}
+                                      onClick={(e) => { e.stopPropagation(); archive(app); }}
+                                      title="Archive"
+                                      className="!h-6 !px-1.5 text-[10px]"
+                                    >
+                                      ✕
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                /* ---------- DETAILED CARD ---------- */
+                                <Card
+                                  key={app._id}
+                                  hoverable
+                                  tabIndex={0}
+                                  role="button"
+                                  aria-label={`${app.title}${app.companyName ? ` at ${app.companyName}` : ""} — ${COLUMN_META[app.status].label}`}
+                                  onKeyDown={(e) => handleCardKeyDown(e, app)}
+                                  className={`!p-3 border-l-4 ${COLUMN_META[app.status].borderCls} transition-all duration-150 hover:-translate-y-0.5 hover:shadow-2 ${
+                                    focusedCardId === app._id ? "ring-2 ring-accent" : ""
+                                  }`}
+                                >
+                                  <div className="flex items-start justify-between gap-1">
+                                    <Link
+                                      href={`/applications/${app._id}`}
+                                      className="text-sm font-bold leading-tight text-text-primary underline-offset-2 hover:text-accent hover:underline"
+                                      tabIndex={-1}
+                                    >
+                                      {app.title}
+                                    </Link>
+                                    <Badge tone={app.status} dot className="shrink-0 !px-1.5 !text-[10px]" />
+                                  </div>
+                                  {app.needsFollowUp && (
+                                    <p className="mt-1 inline-block animate-pulse rounded-full border border-error/30 bg-error/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-error">
+                                      Follow up
+                                    </p>
+                                  )}
+                                  {app.companyName && (
+                                    <p className="mt-0.5 text-xs font-semibold text-text-secondary">{app.companyName}</p>
+                                  )}
+                                  <p className="mt-1 text-xs text-text-tertiary">
+                                    {fmtDate(app.dateApplied)}
+                                    {app.source && <> · <span className="uppercase">{app.source}</span></>}
+                                  </p>
+                                  {app.salary && (
+                                    <p className="mt-0.5 text-xs font-semibold text-success">{app.salary}</p>
+                                  )}
+                                  {app.jd && (
+                                    <p className="mt-1">
+                                      <RoleFitScore jd={app.jd} />
+                                    </p>
+                                  )}
+                                  {app.notes && (
+                                    <p className="mt-1 line-clamp-2 text-xs italic text-text-tertiary">{app.notes}</p>
+                                  )}
+                                  {app.applyUrl && (
+                                    <a
+                                      href={app.applyUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="mt-1 inline-block text-xs font-semibold text-accent underline decoration-accent/50 underline-offset-2 hover:text-text-primary"
+                                    >
+                                      view posting ↗
+                                    </a>
+                                  )}
+                                  <div className="mt-2 flex items-center justify-between gap-1">
+                                    <div className="flex items-center gap-1">
+                                      <select
+                                        value={app.status}
+                                        onChange={(e) => moveToStatus(app, e.target.value as AppStatus)}
+                                        disabled={busyId === app._id}
+                                        className="rounded border border-border bg-surface px-1.5 py-1 text-[10px] font-bold text-text-primary outline-none transition-all duration-150 focus:border-accent focus:ring-1 focus:ring-accent/30"
+                                        aria-label={`Change status for ${app.title}`}
+                                        title="Quick status change"
+                                      >
+                                        {STATUSES.map((st) => (
+                                          <option key={st} value={st}>{COLUMN_META[st].label}</option>
+                                        ))}
+                                      </select>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        disabled={STATUSES.indexOf(app.status) === 0 || busyId === app._id}
+                                        onClick={() => move(app, -1)}
+                                        title="Move left"
+                                        aria-label={`Move ${app.title} to previous stage`}
+                                      >
+                                        ←
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        disabled={STATUSES.indexOf(app.status) === STATUSES.length - 1 || busyId === app._id}
+                                        onClick={() => move(app, 1)}
+                                        title="Move right"
+                                        aria-label={`Move ${app.title} to next stage`}
+                                      >
+                                        →
+                                      </Button>
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      disabled={busyId === app._id}
+                                      onClick={() => archive(app)}
+                                      title="Archive (soft delete — restore later)"
+                                      aria-label={`Archive ${app.title}`}
+                                    >
+                                      ✕
+                                    </Button>
+                                  </div>
+                                </Card>
+                              )
+                            ))}
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}
