@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { SidebarUpcoming } from "./SidebarUpcoming";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Overview", icon: "📊" },
@@ -109,6 +110,9 @@ export function Sidebar() {
           );
         })}
       </div>
+
+      {/* Upcoming interviews widget */}
+      <SidebarUpcoming />
 
       {/* Divider */}
       <div className="mx-3 border-t border-border-subtle" />

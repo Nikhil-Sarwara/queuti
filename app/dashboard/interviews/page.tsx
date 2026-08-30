@@ -14,10 +14,11 @@ export default async function InterviewsPage() {
     <div className="py-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-text-primary">
-          Interviews
+          Interviews & Screenings
         </h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Upcoming interviews and scheduling
+          All your upcoming interviews and screening calls in one place.
+          Add events from an application&apos;s detail page.
         </p>
       </div>
 
