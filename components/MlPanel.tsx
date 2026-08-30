@@ -15,7 +15,7 @@ interface KanbanApp {
 type MlState = "idle" | "loading" | "ready" | "unavailable";
 
 /* ── Score ring — circular SVG gauge ── */
-function ScoreRing({ score, size = 80 }: { score: number; size?: number }) {
+function ScoreRing({ score, size = 80, label }: { score: number; size?: number; label?: string }) {
   const r = (size - 8) / 2;
   const circumference = 2 * Math.PI * r;
   const offset = circumference - (score / 100) * circumference;
@@ -40,15 +40,15 @@ function ScoreRing({ score, size = 80 }: { score: number; size?: number }) {
       </svg>
       <div className="absolute flex flex-col items-center">
         <span className="text-xl font-bold text-text-primary leading-none">{score}</span>
-        <span className="text-[9px] text-text-tertiary">/100</span>
+        <span className="text-[9px] text-text-tertiary">{label || '/100'}</span>
       </div>
     </div>
   );
 }
 
 /**
- * Browser ML panel — compact bento-friendly layout.
- * Role-fit on top, job scorer below, with better visual hierarchy.
+ * Career Compass — AI-powered role analysis and job fit scoring.
+ * Runs 100% client-side via Transformers.js (zero-shot classification).
  */
 export function MlPanel({ fill }: { fill?: boolean }) {
   const [state, setState] = useState<MlState>("idle");
@@ -130,11 +130,11 @@ export function MlPanel({ fill }: { fill?: boolean }) {
       {/* Header */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <h2 className="text-base font-bold text-text-primary">🧠 Browser ML</h2>
+          <h2 className="text-base font-bold text-text-primary">🧭 Career Compass</h2>
           {stateBadge()}
         </div>
         {state === "loading" && (
-          <span className="text-[10px] text-text-tertiary">~25MB one-time</span>
+          <span className="text-[10px] text-text-tertiary">One-time model download</span>
         )}
       </div>
 
@@ -149,7 +149,7 @@ export function MlPanel({ fill }: { fill?: boolean }) {
               : "text-text-tertiary hover:text-text-secondary"
           }`}
         >
-          🎯 Role fit
+          📍 Role Radar
         </button>
         <button
           type="button"
@@ -160,7 +160,7 @@ export function MlPanel({ fill }: { fill?: boolean }) {
               : "text-text-tertiary hover:text-text-secondary"
           }`}
         >
-          📊 Score job
+          ✨ Fit Score
         </button>
       </div>
 
@@ -297,7 +297,7 @@ function ScoreTab({
       {/* Result */}
       {result && (
         <div className="flex items-center gap-3 rounded-lg border border-accent/20 bg-accent/5 p-3">
-          <ScoreRing score={result.score} size={64} />
+          <ScoreRing score={result.score} size={64} label="fit" />
           <div className="min-w-0">
             <p className="text-xs font-semibold text-text-primary">
               {result.score >= 80 ? "🎯 Strong match" :
