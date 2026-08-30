@@ -118,7 +118,7 @@ export function OverviewStats() {
   const interviews = byStatus.interview ?? 0;
   const screening = byStatus.screening ?? 0;
   const offers = data.totals.offers;
-  const rejected = data.totals.rejected ?? 0;
+  const rejected = byStatus.rejected ?? 0;
   const ghosted = data.totals.ghosted;
   const responseRate = total
     ? Math.round((data.totals.responded / total) * 100)
