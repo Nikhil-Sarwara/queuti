@@ -2,7 +2,6 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifySession } from "@/lib/auth";
 import { MlPanel } from "@/components/MlPanel";
-import { RoleFitScore } from "@/components/RoleFitScore";
 
 export const dynamic = "force-dynamic";
 
@@ -22,14 +21,7 @@ export default async function CareerCompassPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="lg:col-span-2">
-          <MlPanel />
-        </div>
-        <div className="lg:col-span-2">
-          <RoleFitScore />
-        </div>
-      </div>
+      <MlPanel />
     </div>
   );
 }
