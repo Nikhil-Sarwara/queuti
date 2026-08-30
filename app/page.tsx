@@ -148,11 +148,13 @@ export default function Home() {
 
       {/* ── CTA ── */}
       <section className="pb-20">
-        <Card className="flex flex-col items-center gap-4 bg-accent px-8 py-12 text-center">
-          <h2 className="text-2xl font-bold text-white">
+        <Card className="relative flex flex-col items-center gap-4 overflow-hidden px-8 py-12 text-center">
+          <div className="absolute inset-0 bg-accent" />
+          <div className="absolute inset-0 bg-black/20" />
+          <h2 className="relative text-2xl font-bold text-white">
             Your next role is in the data
           </h2>
-          <p className="max-w-md text-sm text-white/80">
+          <p className="relative max-w-md text-sm text-white/90">
             Import your hunt, get the numbers, walk into the next interview
             prepared. Free for your own tracker.
           </p>
