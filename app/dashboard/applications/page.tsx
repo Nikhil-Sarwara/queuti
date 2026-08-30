@@ -1,13 +1,12 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifySession } from "@/lib/auth";
-import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
-import { OverviewStats } from "@/components/OverviewStats";
-import { FollowUpPanel } from "@/components/FollowUpPanel";
+import { KanbanBoard } from "@/components/KanbanBoard";
+import { UpcomingInterviews } from "@/components/UpcomingInterviews";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+export default async function ApplicationsPage() {
   const token = cookies().get("queuti_token")?.value;
   const session = token ? await verifySession(token) : null;
   if (!session) redirect("/login");
@@ -16,26 +15,19 @@ export default async function DashboardPage() {
     <div className="py-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-text-primary">
-          Overview
+          Applications
         </h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Welcome back, <strong className="text-text-primary">{session.email}</strong>
+          Kanban board and application management
         </p>
       </div>
 
-      {/* ── Bento Grid ── */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Row 1: Overview stats — full width */}
-        <div className="lg:col-span-3">
-          <OverviewStats />
-        </div>
-
-        {/* Row 2: Follow-ups (2 cols) + Analytics (1 col) */}
         <div className="lg:col-span-2">
-          <FollowUpPanel />
+          <KanbanBoard />
         </div>
         <div className="lg:col-span-1">
-          <AnalyticsDashboard />
+          <UpcomingInterviews fill />
         </div>
       </div>
     </div>

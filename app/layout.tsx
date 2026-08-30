@@ -42,11 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-dvh bg-bg font-sans text-text-primary antialiased">
         <ThemeInit />
-        <main className="px-[clamp(1rem,0.5rem+2vw,2rem)]">
-          <div className="mx-auto max-w-[1280px]">
-            {children}
-          </div>
-        </main>
+        {children}
         <ThemeToggle />
         <SearchPalette />
         <Toaster />

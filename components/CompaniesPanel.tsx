@@ -40,10 +40,12 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
+const inputCls =
+  "w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-text-primary outline-none transition-all duration-150 placeholder:text-text-tertiary focus:border-accent focus:ring-2 focus:ring-accent/30";
+
 /**
- * Companies + contacts management. CRUD round-trips against
- * /api/companies and /api/contacts; applications linked by company name
- * are counted per company so the tracker relationship is visible.
+ * Companies + contacts management — compact bento-friendly layout.
+ * Collapsible add forms, search, compact list cards.
  */
 export function CompaniesPanel({ fill }: { fill?: boolean }) {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -52,13 +54,17 @@ export function CompaniesPanel({ fill }: { fill?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [showAddCompany, setShowAddCompany] = useState(false);
   const [companyForm, setCompanyForm] = useState(EMPTY_COMPANY);
   const [editingCompany, setEditingCompany] = useState<string | null>(null);
   const [busyCompany, setBusyCompany] = useState(false);
+  const [companySearch, setCompanySearch] = useState("");
 
+  const [showAddContact, setShowAddContact] = useState(false);
   const [contactForm, setContactForm] = useState(EMPTY_CONTACT);
   const [editingContact, setEditingContact] = useState<string | null>(null);
   const [busyContact, setBusyContact] = useState(false);
+  const [contactSearch, setContactSearch] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -78,18 +84,19 @@ export function CompaniesPanel({ fill }: { fill?: boolean }) {
       setAppCounts(counts);
       setError("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load companies/contacts");
+      setError(e instanceof Error ? e.message : "Failed to load");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   const setCF = (k: keyof typeof EMPTY_COMPANY) => (v: string) =>
     setCompanyForm((f) => ({ ...f, [k]: v }));
+
+  const setCtF = (k: keyof typeof EMPTY_CONTACT) => (v: string) =>
+    setContactForm((f) => ({ ...f, [k]: v }));
 
   async function saveCompany(e: React.FormEvent) {
     e.preventDefault();
@@ -98,43 +105,39 @@ export function CompaniesPanel({ fill }: { fill?: boolean }) {
     setError("");
     try {
       if (editingCompany) {
-        const { company } = await api<{ company: Company }>(
-          `/api/companies/${editingCompany}`,
-          { method: "PATCH", body: JSON.stringify(companyForm) }
-        );
+        const { company } = await api<{ company: Company }>(`/api/companies/${editingCompany}`, {
+          method: "PATCH", body: JSON.stringify(companyForm),
+        });
         setCompanies((prev) => prev.map((c) => (c._id === editingCompany ? company : c)));
+        toast("Company updated", "success");
       } else {
         const { company } = await api<{ company: Company }>("/api/companies", {
-          method: "POST",
-          body: JSON.stringify(companyForm),
+          method: "POST", body: JSON.stringify(companyForm),
         });
         setCompanies((prev) => [...prev, company]);
+        toast("Company added", "success");
       }
       setCompanyForm(EMPTY_COMPANY);
       setEditingCompany(null);
-      toast(editingCompany ? "Company updated" : "Company added", "success");
+      setShowAddCompany(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save company");
+      setError(err instanceof Error ? err.message : "Failed to save");
     } finally {
       setBusyCompany(false);
     }
   }
 
   async function deleteCompany(c: Company) {
-    if (!confirm(`Delete company "${c.name}"?`)) return;
-    setError("");
+    if (!confirm(`Delete "${c.name}"?`)) return;
     try {
       await api(`/api/companies/${c._id}`, { method: "DELETE" });
       setCompanies((prev) => prev.filter((x) => x._id !== c._id));
       setContacts((prev) => prev.map((ct) => ({ ...ct, companyId: "" })));
       toast(`Deleted ${c.name}`, "success");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete company");
+      setError(err instanceof Error ? err.message : "Failed to delete");
     }
   }
-
-  const setCtF = (k: keyof typeof EMPTY_CONTACT) => (v: string) =>
-    setContactForm((f) => ({ ...f, [k]: v }));
 
   async function saveContact(e: React.FormEvent) {
     e.preventDefault();
@@ -143,232 +146,257 @@ export function CompaniesPanel({ fill }: { fill?: boolean }) {
     setError("");
     try {
       if (editingContact) {
-        const { contact } = await api<{ contact: Contact }>(
-          `/api/contacts/${editingContact}`,
-          { method: "PATCH", body: JSON.stringify(contactForm) }
-        );
+        const { contact } = await api<{ contact: Contact }>(`/api/contacts/${editingContact}`, {
+          method: "PATCH", body: JSON.stringify(contactForm),
+        });
         setContacts((prev) => prev.map((c) => (c._id === editingContact ? contact : c)));
+        toast("Contact updated", "success");
       } else {
         const { contact } = await api<{ contact: Contact }>("/api/contacts", {
-          method: "POST",
-          body: JSON.stringify(contactForm),
+          method: "POST", body: JSON.stringify(contactForm),
         });
         setContacts((prev) => [...prev, contact]);
+        toast("Contact added", "success");
       }
       setContactForm(EMPTY_CONTACT);
       setEditingContact(null);
-      toast(editingContact ? "Contact updated" : "Contact added", "success");
+      setShowAddContact(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save contact");
+      setError(err instanceof Error ? err.message : "Failed to save");
     } finally {
       setBusyContact(false);
     }
   }
 
   async function deleteContact(c: Contact) {
-    if (!confirm(`Delete contact "${c.name}"?`)) return;
-    setError("");
+    if (!confirm(`Delete "${c.name}"?`)) return;
     try {
       await api(`/api/contacts/${c._id}`, { method: "DELETE" });
       setContacts((prev) => prev.filter((x) => x._id !== c._id));
       toast(`Deleted ${c.name}`, "success");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete contact");
+      setError(err instanceof Error ? err.message : "Failed to delete");
     }
   }
 
   if (loading) {
-    return (
-      <section className="mt-8">
-        <Card className="text-sm text-text-secondary">Loading companies & contacts…</Card>
-      </section>
-    );
+    return <section className={fill ? "flex h-full flex-col" : "mt-8"}><Card className="text-xs text-text-secondary">Loading…</Card></section>;
   }
 
-  const companyName = (id: string) =>
-    companies.find((c) => c._id === id)?.name || "";
+  const companyName = (id: string) => companies.find((c) => c._id === id)?.name || "";
 
-  const inputCls =
-    "w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-text-primary outline-none transition-all duration-150 placeholder:text-text-tertiary focus:border-accent focus:ring-2 focus:ring-accent/30";
+  const filteredCompanies = companies.filter((c) => {
+    if (!companySearch) return true;
+    const q = companySearch.toLowerCase();
+    return c.name.toLowerCase().includes(q) || c.industry.toLowerCase().includes(q) || c.location.toLowerCase().includes(q);
+  });
+
+  const filteredContacts = contacts.filter((c) => {
+    if (!contactSearch) return true;
+    const q = contactSearch.toLowerCase();
+    return c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || companyName(c.companyId).toLowerCase().includes(q);
+  });
 
   return (
     <section className={fill ? "flex h-full flex-col" : "mt-8"}>
-      <h2 className="text-lg font-bold text-text-primary">
-        Companies & Contacts
-      </h2>
+      <h2 className="text-base font-bold text-text-primary">Companies & Contacts</h2>
 
       {error && (
-        <Card className="mt-3 border-error/20" role="alert">
-          <p className="text-sm font-semibold text-error">{error}</p>
-        </Card>
+        <div className="mt-2 rounded-md bg-error/10 px-2.5 py-1.5 text-[11px] text-error">{error}</div>
       )}
 
-      <div className="mt-3 grid gap-3 lg:grid-cols-2">
-        {/* ---- Companies ---- */}
-        <Card>
-          <h3 className="text-base font-bold text-text-primary">
-            Companies
-          </h3>
-          <form onSubmit={saveCompany} className="mt-3 grid grid-cols-2 gap-2">
-            <div className="col-span-2">
-              <TextField label="Name *" name="co-name" required value={companyForm.name} onChange={(e) => setCF("name")(e.target.value)} placeholder="Acme Corp" />
+      <div className="mt-2 grid gap-3 lg:grid-cols-2 flex-1">
+        {/* ── Companies ── */}
+        <div className="flex flex-col">
+          {/* Header bar */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={companySearch}
+                onChange={(e) => setCompanySearch(e.target.value)}
+                placeholder="Search companies…"
+                className={`${inputCls} !pl-7`}
+              />
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] text-text-tertiary">🔍</span>
             </div>
-            <div className="col-span-2">
-              <TextField label="Website" name="co-site" value={companyForm.website} onChange={(e) => setCF("website")(e.target.value)} placeholder="https://acme.com" />
-            </div>
-            <div>
-              <TextField label="Industry" name="co-ind" value={companyForm.industry} onChange={(e) => setCF("industry")(e.target.value)} placeholder="SaaS" />
-            </div>
-            <div>
-              <TextField label="Location" name="co-loc" value={companyForm.location} onChange={(e) => setCF("location")(e.target.value)} placeholder="Melbourne" />
-            </div>
-            <div className="col-span-2">
-              <TextField label="Notes" name="co-notes" value={companyForm.notes} onChange={(e) => setCF("notes")(e.target.value)} placeholder="Referral via Priya…" />
-            </div>
-            <div className="col-span-2 flex items-center justify-end gap-2">
-              {editingCompany && (
-                <Button type="button" variant="secondary" size="sm" onClick={() => { setCompanyForm(EMPTY_COMPANY); setEditingCompany(null); }}>
-                  Cancel
-                </Button>
-              )}
-              <Button type="submit" variant="primary" size="sm" disabled={busyCompany || !companyForm.name.trim()}>
-                {busyCompany ? "Saving…" : editingCompany ? "Save company" : "Add company"}
-              </Button>
-            </div>
-          </form>
+            <Button
+              variant={showAddCompany ? "secondary" : "primary"}
+              size="sm"
+              onClick={() => {
+                setShowAddCompany(!showAddCompany);
+                setEditingCompany(null);
+                setCompanyForm(EMPTY_COMPANY);
+              }}
+            >
+              {showAddCompany ? "✕" : "+ Add"}
+            </Button>
+          </div>
 
-          <ul className="mt-4 max-h-[400px] space-y-2 overflow-y-auto scrollbar-thin">
-            {companies.length === 0 && (
-              <li className="text-sm italic text-text-tertiary">No companies yet.</li>
+          {/* Add form — collapsible */}
+          {showAddCompany && (
+            <Card className="mt-2 !p-3">
+              <form onSubmit={saveCompany} className="space-y-2">
+                <input
+                  autoFocus required value={companyForm.name} onChange={(e) => setCF("name")(e.target.value)}
+                  placeholder="Company name *"
+                  className={inputCls}
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <input value={companyForm.industry} onChange={(e) => setCF("industry")(e.target.value)} placeholder="Industry" className={inputCls} />
+                  <input value={companyForm.location} onChange={(e) => setCF("location")(e.target.value)} placeholder="Location" className={inputCls} />
+                </div>
+                <input value={companyForm.website} onChange={(e) => setCF("website")(e.target.value)} placeholder="Website" className={inputCls} />
+                <input value={companyForm.notes} onChange={(e) => setCF("notes")(e.target.value)} placeholder="Notes" className={inputCls} />
+                <div className="flex justify-end gap-2 pt-0.5">
+                  {editingCompany && (
+                    <Button type="button" variant="secondary" size="sm" onClick={() => { setCompanyForm(EMPTY_COMPANY); setEditingCompany(null); setShowAddCompany(false); }}>
+                      Cancel
+                    </Button>
+                  )}
+                  <Button type="submit" variant="primary" size="sm" disabled={busyCompany || !companyForm.name.trim()}>
+                    {busyCompany ? "…" : editingCompany ? "Save" : "Add"}
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          )}
+
+          {/* Company list */}
+          <div className="mt-2 flex-1 space-y-1.5 overflow-y-auto scrollbar-thin">
+            {filteredCompanies.length === 0 && (
+              <p className="py-4 text-center text-[11px] text-text-tertiary">
+                {companySearch ? "No matches" : "No companies yet — click + Add"}
+              </p>
             )}
-            {companies.map((c) => {
+            {filteredCompanies.map((c) => {
               const count = appCounts[c.name.trim().toLowerCase()] || 0;
               return (
-                <li key={c._id} className="rounded-lg border border-border-subtle bg-elevated p-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-text-primary">{c.name}</p>
-                      <p className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-text-tertiary">
-                        {count > 0 && (
-                          <span className="font-semibold text-success">{count} application{count === 1 ? "" : "s"}</span>
-                        )}
-                        {c.industry && <span>{c.industry}</span>}
-                        {c.location && <span>{c.location}</span>}
-                        {c.website && (
-                          <a href={c.website} target="_blank" rel="noopener noreferrer" className="font-semibold text-accent underline decoration-accent/50 underline-offset-2 hover:text-text-primary">
-                            site ↗
-                          </a>
-                        )}
-                      </p>
-                      {c.notes && <p className="mt-0.5 line-clamp-2 text-xs italic text-text-tertiary">{c.notes}</p>}
-                    </div>
-                    <div className="flex shrink-0 gap-1">
-                      <Button size="sm" variant="ghost" title="Edit" aria-label={`Edit company ${c.name}`} onClick={() => { setCompanyForm({ name: c.name, website: c.website, industry: c.industry, location: c.location, notes: c.notes }); setEditingCompany(c._id); }}>
-                        ✏️
-                      </Button>
-                      <Button size="sm" variant="ghost" title="Delete" aria-label={`Delete company ${c.name}`} onClick={() => deleteCompany(c)}>
-                        ✕
-                      </Button>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </Card>
-
-        {/* ---- Contacts ---- */}
-        <Card>
-          <h3 className="text-base font-bold text-text-primary">
-            Contacts
-          </h3>
-          <form onSubmit={saveContact} className="mt-3 grid grid-cols-2 gap-2">
-            <div className="col-span-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary">
-                Name *
-              </label>
-              <input required value={contactForm.name} onChange={(e) => setCtF("name")(e.target.value)} placeholder="Priya Sharma" className={`mt-1.5 ${inputCls}`} />
-            </div>
-            <div className="col-span-2 md:col-span-1">
-              <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary">
-                Email
-              </label>
-              <input type="email" value={contactForm.email} onChange={(e) => setCtF("email")(e.target.value)} placeholder="priya@acme.com" className={`mt-1.5 ${inputCls}`} />
-            </div>
-            <div className="col-span-2 md:col-span-1">
-              <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary">
-                Phone
-              </label>
-              <input value={contactForm.phone} onChange={(e) => setCtF("phone")(e.target.value)} placeholder="+61 4xx xxx xxx" className={`mt-1.5 ${inputCls}`} />
-            </div>
-            <div className="col-span-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary">
-                Company
-              </label>
-              <select
-                className={`mt-1.5 ${inputCls}`}
-                value={contactForm.companyId}
-                onChange={(e) => setCtF("companyId")(e.target.value)}
-              >
-                <option value="">— none —</option>
-                {companies.map((c) => (
-                  <option key={c._id} value={c._id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="col-span-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary">
-                Notes
-              </label>
-              <input value={contactForm.notes} onChange={(e) => setCtF("notes")(e.target.value)} placeholder="Recruiter, met at meetup…" className={`mt-1.5 ${inputCls}`} />
-            </div>
-            <div className="col-span-2 flex items-center justify-end gap-2">
-              {editingContact && (
-                <Button type="button" variant="secondary" size="sm" onClick={() => { setContactForm(EMPTY_CONTACT); setEditingContact(null); }}>
-                  Cancel
-                </Button>
-              )}
-              <Button type="submit" variant="primary" size="sm" disabled={busyContact || !contactForm.name.trim()}>
-                {busyContact ? "Saving…" : editingContact ? "Save contact" : "Add contact"}
-              </Button>
-            </div>
-          </form>
-
-          <ul className="mt-4 max-h-[400px] space-y-2 overflow-y-auto scrollbar-thin">
-            {contacts.length === 0 && (
-              <li className="text-sm italic text-text-tertiary">No contacts yet.</li>
-            )}
-            {contacts.map((c) => (
-              <li key={c._id} className="rounded-lg border border-border-subtle bg-elevated p-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-text-primary">{c.name}</p>
-                    <p className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-text-secondary">
-                      {companyName(c.companyId) && (
-                        <Badge tone="screening" dot className="!px-1.5 !text-[10px]">{companyName(c.companyId)}</Badge>
+                <div key={c._id} className="group flex items-center gap-2 rounded-lg border border-border-subtle bg-elevated/50 px-2.5 py-2 transition-all hover:bg-elevated">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="truncate text-xs font-semibold text-text-primary">{c.name}</span>
+                      {count > 0 && (
+                        <Badge tone="applied" className="!px-1 !py-0 !text-[9px] shrink-0">{count} app{count === 1 ? "" : "s"}</Badge>
                       )}
-                      {c.email && (
-                        <a href={`mailto:${c.email}`} className="font-semibold text-accent underline decoration-accent/40 underline-offset-2 hover:text-text-primary">
-                          {c.email}
-                        </a>
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0 text-[10px] text-text-tertiary">
+                      {c.industry && <span>{c.industry}</span>}
+                      {c.location && <span>📍 {c.location}</span>}
+                      {c.website && (
+                        <a href={c.website} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">link ↗</a>
                       )}
-                      {c.phone && <span>{c.phone}</span>}
-                    </p>
-                    {c.notes && <p className="mt-0.5 line-clamp-2 text-xs italic text-text-tertiary">{c.notes}</p>}
+                    </div>
+                    {c.notes && <p className="mt-0.5 truncate text-[10px] italic text-text-tertiary">{c.notes}</p>}
                   </div>
-                  <div className="flex shrink-0 gap-1">
-                    <Button size="sm" variant="ghost" title="Edit" aria-label={`Edit contact ${c.name}`} onClick={() => { setContactForm({ name: c.name, email: c.email, phone: c.phone, companyId: c.companyId, notes: c.notes }); setEditingContact(c._id); }}>
-                      ✏️
-                    </Button>
-                    <Button size="sm" variant="ghost" title="Delete" aria-label={`Delete contact ${c.name}`} onClick={() => deleteContact(c)}>
-                      ✕
-                    </Button>
+                  <div className="flex shrink-0 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                    <Button size="sm" variant="ghost" onClick={() => {
+                      setCompanyForm({ name: c.name, website: c.website, industry: c.industry, location: c.location, notes: c.notes });
+                      setEditingCompany(c._id);
+                      setShowAddCompany(true);
+                    }}>✏️</Button>
+                    <Button size="sm" variant="ghost" onClick={() => deleteCompany(c)}>✕</Button>
                   </div>
                 </div>
-              </li>
-            ))}
-          </ul>
-        </Card>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Contacts ── */}
+        <div className="flex flex-col">
+          {/* Header bar */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={contactSearch}
+                onChange={(e) => setContactSearch(e.target.value)}
+                placeholder="Search contacts…"
+                className={`${inputCls} !pl-7`}
+              />
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] text-text-tertiary">🔍</span>
+            </div>
+            <Button
+              variant={showAddContact ? "secondary" : "primary"}
+              size="sm"
+              onClick={() => {
+                setShowAddContact(!showAddContact);
+                setEditingContact(null);
+                setContactForm(EMPTY_CONTACT);
+              }}
+            >
+              {showAddContact ? "✕" : "+ Add"}
+            </Button>
+          </div>
+
+          {/* Add form — collapsible */}
+          {showAddContact && (
+            <Card className="mt-2 !p-3">
+              <form onSubmit={saveContact} className="space-y-2">
+                <input autoFocus required value={contactForm.name} onChange={(e) => setCtF("name")(e.target.value)} placeholder="Name *" className={inputCls} />
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="email" value={contactForm.email} onChange={(e) => setCtF("email")(e.target.value)} placeholder="Email" className={inputCls} />
+                  <input value={contactForm.phone} onChange={(e) => setCtF("phone")(e.target.value)} placeholder="Phone" className={inputCls} />
+                </div>
+                <select value={contactForm.companyId} onChange={(e) => setCtF("companyId")(e.target.value)} className={inputCls}>
+                  <option value="">No company</option>
+                  {companies.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+                </select>
+                <input value={contactForm.notes} onChange={(e) => setCtF("notes")(e.target.value)} placeholder="Notes" className={inputCls} />
+                <div className="flex justify-end gap-2 pt-0.5">
+                  {editingContact && (
+                    <Button type="button" variant="secondary" size="sm" onClick={() => { setContactForm(EMPTY_CONTACT); setEditingContact(null); setShowAddContact(false); }}>
+                      Cancel
+                    </Button>
+                  )}
+                  <Button type="submit" variant="primary" size="sm" disabled={busyContact || !contactForm.name.trim()}>
+                    {busyContact ? "…" : editingContact ? "Save" : "Add"}
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          )}
+
+          {/* Contact list */}
+          <div className="mt-2 flex-1 space-y-1.5 overflow-y-auto scrollbar-thin">
+            {filteredContacts.length === 0 && (
+              <p className="py-4 text-center text-[11px] text-text-tertiary">
+                {contactSearch ? "No matches" : "No contacts yet — click + Add"}
+              </p>
+            )}
+            {filteredContacts.map((c) => {
+              const coName = companyName(c.companyId);
+              return (
+                <div key={c._id} className="group flex items-center gap-2 rounded-lg border border-border-subtle bg-elevated/50 px-2.5 py-2 transition-all hover:bg-elevated">
+                  {/* Avatar */}
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[11px] font-bold text-accent">
+                    {c.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="truncate text-xs font-semibold text-text-primary">{c.name}</span>
+                      {coName && <Badge tone="screening" className="!px-1 !py-0 !text-[9px] shrink-0">{coName}</Badge>}
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0 text-[10px] text-text-tertiary">
+                      {c.email && <a href={`mailto:${c.email}`} className="text-accent hover:underline">{c.email}</a>}
+                      {c.phone && <span>{c.phone}</span>}
+                    </div>
+                    {c.notes && <p className="mt-0.5 truncate text-[10px] italic text-text-tertiary">{c.notes}</p>}
+                  </div>
+                  <div className="flex shrink-0 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                    <Button size="sm" variant="ghost" onClick={() => {
+                      setContactForm({ name: c.name, email: c.email, phone: c.phone, companyId: c.companyId, notes: c.notes });
+                      setEditingContact(c._id);
+                      setShowAddContact(true);
+                    }}>✏️</Button>
+                    <Button size="sm" variant="ghost" onClick={() => deleteContact(c)}>✕</Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </section>
   );
