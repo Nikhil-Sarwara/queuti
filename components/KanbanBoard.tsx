@@ -849,8 +849,8 @@ export function KanbanBoard() {
 
                       {/* Column body — animated collapse */}
                       <div
-                        className={`flex min-h-[120px] flex-col gap-2 overflow-hidden px-2 pb-2 transition-all duration-300 ease-in-out ${
-                          isCollapsed ? "max-h-0 min-h-0 opacity-0" : `max-h-[calc(100vh-320px)] opacity-100`
+                        className={`flex min-h-[120px] flex-col gap-2 overflow-y-auto px-2 pb-2 transition-all duration-300 ease-in-out scrollbar-thin ${
+                          isCollapsed ? "max-h-0 min-h-0 opacity-0 overflow-hidden" : `max-h-[calc(100vh-320px)] opacity-100`
                         }`}
                         style={{
                           maskImage: "linear-gradient(to bottom, black 85%, transparent 100%)",
